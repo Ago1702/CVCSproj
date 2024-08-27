@@ -83,10 +83,10 @@ class SpatialAttention(nn.Module):
         return x * scale
 
 class CBAM(nn.Module):
-    def __init__(self, gate_channels, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False):
+    def __init__(self, gate_channels, kernel_size = 7, reduction_ratio=16, pool_types=['avg', 'max'], no_spatial=False):
         super(CBAM, self).__init__()
         self.channel_att = ChannelAttention(gate_channels, reduction_ratio, pool_types)
-        self.spatial_att = SpatialAttention() if not no_spatial else None
+        self.spatial_att = SpatialAttention(kernel_size) if not no_spatial else None
     
     def forward(self, x):
         x_out = self.channel_att(x)
