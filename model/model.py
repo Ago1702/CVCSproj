@@ -20,7 +20,7 @@ from moduli.cbam import CBAM
 # Il risultato finale viene unito eseguendo una media
 # 
 # L'idea è, di base, quella della GoogleNet 2014
-#
+#  
 
 class MultiCBAM(nn.Module):
     def __init__(self, channel:int, r:float | int | list[int|float] = 16):
@@ -33,10 +33,18 @@ class MultiCBAM(nn.Module):
             self.bam_small = CBAM(channel, 3, r)
             self.bam_medium = CBAM(channel, 7, r)
             self.bam_large = CBAM(channel, 15, r)
+        self.conv1 = nn.Conv2d(9, 3, 1)
     
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         x_small = self.bam_small(x)
         x_medium = self.bam_medium(x)
         x_large = self.bam_large(x)
-        x_final = (x_small + x_medium + x_large) / 3
-        return x_final + x
+        x_final = torch.concat([x_small, x_medium, x_large], 1)
+        x_final = self.conv1(x_final)
+        return x + x_final
+        
+if __name__ == "__main__":
+    net = nn.Sequential(MultiCBAM(3))
+    x = torch.rand([1, 3, 4, 4])
+    print(x)
+    print(net.forward(x))

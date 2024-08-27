@@ -3,6 +3,8 @@ import math
 import torch.nn as nn
 import torch.nn.functional as func
 
+INIT = torch.nn.init.xavier_normal_
+
 def logsumexp_2d(tensor):
     tensor_flatten = tensor.view(tensor.size(0), tensor.size(1), -1)
     s, _ = torch.max(tensor_flatten, dim=2, keepdim=True)
@@ -14,6 +16,7 @@ class BasicConv(nn.Module):
         super(BasicConv, self).__init__()
         self.out_channels = out_planes
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation, groups=groups)
+        INIT(self.conv.weight)
         self.bn = nn.BatchNorm2d(out_planes, 1e-5, momentum=0.1, affine=True) if bn else None
         self.relu = nn.ReLU() if relu else None
     
@@ -40,6 +43,9 @@ class ChannelAttention(nn.Module):
             nn.Linear(channels // r, channels)
         )
         self.pool_types = pool_types
+        for module in self.mlp.children():
+            if isinstance(module, nn.Linear):
+                INIT(module.weight)
 
     def forward(self, x:torch.Tensor):
         spacial_descr = None
@@ -78,7 +84,7 @@ class SpatialAttention(nn.Module):
     
     def forward(self, x):
         x_compress = self.compress(x)
-        x_out = self.spatial(x)
+        x_out = self.spatial(x_compress)
         scale = func.sigmoid(x_out)
         return x * scale
 
