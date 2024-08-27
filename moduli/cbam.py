@@ -30,7 +30,7 @@ class Flatten(nn.Module):
         return x.view(x.size(0), -1)
 
 class ChannelAttention(nn.Module):
-    def __init__(self, channels, r=16, pool_types=["avg", "max"]):
+    def __init__(self, channels:int, r=16, pool_types=["avg", "max"]):
         super(ChannelAttention, self).__init__()
         self.gate_channels = channels
         self.mlp = nn.Sequential(
