@@ -12,6 +12,12 @@ class Transform():
     def __init__(self, p:float = 0.5, scale:float=0.8,
                  transform:tuple = (v2.RandomPerspective(p=1), v2.RandomAffine(90), v2.GaussianBlur(3), v2.RandomAdjustSharpness(2, 1)),
                  SEED:int = 30347):
+        
+        if p < 0 or p > 1:
+            raise ValueError("p in range [0, 1]")
+        if scale < 0:
+            raise ValueError("Solo valori positivi")
+        
         self.trf = transform
         self.p = p
         self.scale = scale
@@ -33,7 +39,7 @@ class Transform():
 if __name__ == "__main__":
     N = 3
     img = torch.rand((N, 1, 150, 150))
-    trf = Transform(p=1, scale=1)
+    trf = Transform(p=1.1, scale=1)
     img = trf.apply_transform(img)
     for i in range(N):
         plt.imshow(img[i].squeeze())
