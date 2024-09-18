@@ -5,12 +5,12 @@ import random
 import numpy as np
 from numpy.random import PCG64
 from skimage import data
-from torchvision import transforms as tf
+from torchvision.transforms import v2
 from matplotlib import pyplot as plt
 
 class Transform():
     def __init__(self, p:float = 0.5, scale:float=0.8,
-                 transform:tuple = (tf.RandomPerspective(p=1), tf.RandomAffine(90), tf.GaussianBlur(3), tf.RandomAdjustSharpness(2, 1)),
+                 transform:tuple = (v2.RandomPerspective(p=1), v2.RandomAffine(90), v2.GaussianBlur(3), v2.RandomAdjustSharpness(2, 1)),
                  SEED:int = 30347):
         self.trf = transform
         self.p = p
@@ -22,16 +22,20 @@ class Transform():
     def apply_transform(self, x:torch.Tensor) -> torch.Tensor:
         perm = self.permuter.permutation(x = len(self.trf))
         p = self.p
+        trfs = list()
         for i in perm:
             if p > self.rnd.random():
-                x = self.trf[i](x)
+                trfs.append(self.trf[i])
                 p *= self.scale
-        return x
+        comp = v2.Compose(trfs)
+        return comp.forward(x)
 
 if __name__ == "__main__":
-    img = torch.from_numpy(data.camera()).unsqueeze(0)
+    N = 3
+    img = torch.rand((N, 1, 150, 150))
     trf = Transform(p=1, scale=1)
     img = trf.apply_transform(img)
-    plt.imshow(img.squeeze())
-    plt.show()
+    for i in range(N):
+        plt.imshow(img[i].squeeze())
+        plt.show()
     pass
