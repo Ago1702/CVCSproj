@@ -25,7 +25,7 @@ class Transform():
         self.rnd = random.Random(SEED)
         pass
 
-    def apply_transform(self, x:torch.Tensor) -> torch.Tensor:
+    def get_transform(self) -> v2.Transform:
         perm = self.permuter.permutation(x = len(self.trf))
         p = self.p
         trfs = list()
@@ -34,12 +34,16 @@ class Transform():
                 trfs.append(self.trf[i])
                 p *= self.scale
         comp = v2.Compose(trfs)
+        return comp
+
+    def apply_transform(self, x:torch.Tensor) -> torch.Tensor:
+        comp = self.get_transform()
         return comp.forward(x)
 
 if __name__ == "__main__":
     N = 3
     img = torch.rand((N, 1, 150, 150))
-    trf = Transform(p=1.1, scale=1)
+    trf = Transform(p=1, scale=1)
     img = trf.apply_transform(img)
     for i in range(N):
         plt.imshow(img[i].squeeze())
