@@ -100,7 +100,7 @@ class CBAM(nn.Module):
             x_out = self.spatial_att(x_out)
         return x_out
 
-#
+# 
 # Idea di base
 # Usare 3 moduli di attenzione differenti
 # Questi hanno, per l'elemento, spaziale una differente dimensionalità
@@ -112,7 +112,7 @@ class CBAM(nn.Module):
 # - Generale    dim = (15, 15)
 # - Intermedia  dim = (7, 7)
 # del fenomeno
-#
+# 
 # !!Questo elemento deve ancora essere valutato!!
 # Il risultato finale viene unito eseguendo una media
 # 

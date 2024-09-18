@@ -1,7 +1,7 @@
 import torch
 import math
 import torch.nn as nn
-from moduli.modules import MultiCBAM, CBAM
+from utils.modules import MultiCBAM, CBAM
 
 if __name__ == "__main__":
     net = nn.Sequential(
