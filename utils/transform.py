@@ -33,6 +33,8 @@ class Transform():
             if p > self.rnd.random():
                 trfs.append(self.trf[i])
                 p *= self.scale
+            else:
+                break
         comp = v2.Compose(trfs)
         return comp
 
