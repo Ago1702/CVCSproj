@@ -114,7 +114,7 @@ class CBAM(nn.Module):
 # del fenomeno
 # 
 # !!Questo elemento deve ancora essere valutato!!
-# Il risultato finale viene unito eseguendo una media
+# Il risultato finale viene unito concatenando ed eseguendo una 1*1 conv.
 # 
 # L'idea è, di base, quella della GoogleNet 2014
 #  

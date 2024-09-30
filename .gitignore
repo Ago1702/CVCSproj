@@ -163,4 +163,4 @@ cython_debug/
 notebook/data.ipynb
 model/model.py
 model/bellidati.py
-outputs
+/outputs
