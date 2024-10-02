@@ -37,8 +37,8 @@ class GridRandomCrop(v2.Transform):
         Returns:
             torch.Tensor: The transformed image
         """
-        y = torch.randint(low=int(image.size(2)*7/30),high=int(image.size(2)*13/30),size=(1,))
-        x = torch.randint(low=int(image.size(3)*7/30),high=int(image.size(3)*13/30),size=(1,))
+        y = torch.randint(low=int(image.size(2)*6/30),high=int(image.size(2)*14/30),size=(1,))
+        x = torch.randint(low=int(image.size(3)*6/30),high=int(image.size(3)*14/30),size=(1,))
         return v2.functional.crop(image,y,x,self.size[0],self.size[1])
     
     def __call__(self,image:torch.Tensor)->torch.Tensor:
