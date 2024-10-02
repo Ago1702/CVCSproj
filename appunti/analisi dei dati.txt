@@ -1,0 +1,32 @@
+reference con dati di altri gruppi di ricerca:
+https://benchmarks.elsa-ai.eu/?ch=3&com=evaluation&task=2
+
+il modello deve essere abbastanza robusto da gestire correttamente immagini che hanno subito le seguenti trasformazioni:
+- rotation
+- mirroring
+- gaussian filtering
+- scaling
+- cropping
+
+I dati presentano foto generate con:
+Average height:   412
+Average width:    494
+Max height:       512
+Max width:        640
+Min height:       256
+Min width:        256
+
+E' stato condotto un test per vedere se le trasformazioni privilegiano una specifica regione delle immagini.
+Per i dettagli vedere transform_test.py
+Risultati:
+I risultati sono molto buoni (vedi outputs/histograms)
+L'effetto pacman rende la distrubuzione della scelta delle zone più uniforme, e riduce di molto le zone nere selezionate (quelle inutili)
+L'unico problema è che la trasformazione prevede la creazione di immagini 9 volte più grandi dell'originale, rendendo la computazione più onerosa
+
+Iperparametri: è stata usata una funzione di crop custom che cerca di rimanere al centro della foto 3x3 generata dall'effetto pacman.
+Più la finestra di estrazione è grande, più l'istogramma è uniforme, al costo però di aumentare la quantità di zone nere
+Minore è la finestra, maggiore è il bias verso i bordi, ma il nero inutile aumenta.
+Abbiamo scelto empiricamente una finestra che va da 7/30 a 13/30 (ma abbiamo provato anche quelle nei loro intorni)
+
+Risultati sul random crop da libreria:
+Ha un bias verso il centro della foto (E' male? boh, vediamo i risultati più avanti)
