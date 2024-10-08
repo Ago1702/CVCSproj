@@ -1,0 +1,1 @@
+srun --partition=all_serial --account=cvcs2024 --gres=gpu:1 --pty bash --time=01:00:00
