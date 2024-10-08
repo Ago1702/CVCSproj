@@ -18,12 +18,13 @@ class GridRandomCrop(v2.Transform):
     the padding area
 
     """
-    def __init__(self,size: tuple[int,int]):
+    def __init__(self,size: tuple[int,int],cropping_window:tuple[float,float]=(7/30,13/30)):
         super().__init__()
         #checking the parameters
         if size[0] <= 0 or size[1] <= 0:
             raise(ValueError(f"Invalid size parameter:({size[0]},{size[1]}): it must be a tuple of two positive integers")) 
         self.size = size
+        self.cropping_window = cropping_window
     
 
 
@@ -37,8 +38,8 @@ class GridRandomCrop(v2.Transform):
         Returns:
             torch.Tensor: The transformed image
         """
-        y = torch.randint(low=int(image.size(2)*6/30),high=int(image.size(2)*14/30),size=(1,))
-        x = torch.randint(low=int(image.size(3)*6/30),high=int(image.size(3)*14/30),size=(1,))
+        y = torch.randint(low=int(image.size(2)*self.cropping_window[0]),high=int(image.size(2)*self.cropping_window[1]),size=(1,))
+        x = torch.randint(low=int(image.size(3)*self.cropping_window[0]),high=int(image.size(3)*self.cropping_window[1]),size=(1,))
         return v2.functional.crop(image,y,x,self.size[0],self.size[1])
     
     def __call__(self,image:torch.Tensor)->torch.Tensor:
@@ -117,7 +118,7 @@ class RandomTransform(v2.Transform):
         self.pacman = pacman
         pass
 
-    def get_transform(self) -> v2.Transform:
+    def get_transform(self,image:torch.Tensor) -> v2.Transform:
         """
         Elaborate the subset of transforms.
         After a random permutation of the tranform set, the function start iterating over the transformations.
@@ -147,7 +148,10 @@ class RandomTransform(v2.Transform):
             size = (80,80)
         
         if self.pacman:
-            trfs.append(GridRandomCrop(size))
+            if image.size(2)>350 and self.cropping_mode==self.LOCAL_CROP:
+                trfs.append(GridRandomCrop(size,(6/30,14/30)))
+            else:
+                trfs.append(GridRandomCrop(size))
         else:
             trfs.append(v2.RandomCrop(size=size))
         comp = v2.Compose(trfs)
@@ -165,7 +169,7 @@ class RandomTransform(v2.Transform):
             torch.Tensor: The transformed image
         """
 
-        return self.get_transform().forward(x)
+        return self.get_transform(x).forward(x)
     
     def __call__(self, x)->torch.Tensor:
         return self.forward(x)

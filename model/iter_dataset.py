@@ -1,6 +1,7 @@
 import torch
 import random
 import io
+import os
 import numpy as np
 from torch.utils.data import Dataset, DataLoader, IterableDataset
 import requests
@@ -60,6 +61,10 @@ class BufferedIterable(IterableDataset):
                         r = requests.get(item["url_real_image"], stream=True)
                         if r.status_code == 200:
                             img = Image.open(io.BytesIO(r.content))
+                            #resizing is performed to make image transformations more stable, since their stability is garanteed only for a certain range of dimensions
+                            if img.size[0] < 200 or img.size[1] < 200:
+                                new_size = (img.size[0]*2,img.size[1]*2)
+                                img = img.resize(new_size)
                         else:
                             cat = self.FAKE
                     img = self.__transform_image__(img)
@@ -89,7 +94,7 @@ class BufferedIterable(IterableDataset):
         return tnr
 
 #   Test code
-"""
+
 if __name__ == "__main__":
     ds = BufferedIterable(4)
     t = transforms.PILToTensor()
@@ -98,7 +103,7 @@ if __name__ == "__main__":
         if(i == 0):
             break
         plt.imshow(el[0])
-        plt.show()
-        print(el[1])
+        save_path = os.path.expanduser(f"~/CVCSproj/outputs/garbage/image{i}.png")
+        plt.savefig(save_path)
+        print(f"Label for image: {i} -> {el[1]}") #printing the label
         i-=1
-"""
