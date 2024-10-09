@@ -1,0 +1,1 @@
+slurmstepd: error: *** JOB 2467169 ON ailb-login-02 CANCELLED AT 2024-10-09T00:26:40 ***

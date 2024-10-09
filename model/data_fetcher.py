@@ -81,7 +81,7 @@ def parquet_processor(file:str,start_index:int,validation:bool = False) -> int:
         image_height = row[f'height_gen{chosen_image}']
         image_bytes = image_dict['bytes']
         image_fake = Image.open(io.BytesIO(image_bytes))
-        image_code = str(index).zfill(7)
+        image_code = str(index).zfill(8)
 
         if not validation:
             output_path_fake=f'/work/cvcs2024/VisionWise/train/train-fake-{image_code}.png'
@@ -104,6 +104,7 @@ def parquet_processor(file:str,start_index:int,validation:bool = False) -> int:
                 os.remove(output_path_fake)
         except:
             os.remove(output_path_fake)
+    os.remove(file)
     return index
         
     
@@ -136,58 +137,100 @@ all_files = list_repo_files(repo_id=repo_id,repo_type="dataset")
 train_files, test_files =train_test_splitter(all_files)
 
 #test dataset part
-with ThreadPoolExecutor() as executor:
+futures = []
+with ThreadPoolExecutor(max_workers=11) as executor:
         for file in test_files:
-            executor.submit(download_file,file)
+            futures.append(executor.submit(download_file,file))
             #if there is no file left to process, break
             if len(train_files)==0:
                 break
-#ensuring all threads complete their execution
-executor.shutdown(wait=True)
+    #ensuring all threads complete their execution
+for future in futures:
+        try:
+            result = future.result()  # Wait for the thread to complete and get the result
+        except Exception as e:
+            print(f'Error')
 
 print(f"Saved a total of {len(test_files)} test files")
 
 selected_files = os.listdir(os.path.join(image_folder,'data'))
 file_index:int = 0
 os.system('clear')
+
+futures = []
+with ThreadPoolExecutor(max_workers=11) as executor:
+    for file in selected_files:
+        futures.append(executor.submit(parquet_processor,os.path.join(image_folder,'data',file),file_index,True))
+        file_index+=600
+        
+#ensuring all threads complete their execution
+for future in futures:
+        try:
+            result = future.result()  # Wait for the thread to complete and get the result
+        except Exception as e:
+            print(f'Error')
+
+'''old code
 for file in selected_files:
     print(f'Start Index={file_index}')
+    
     file_index=parquet_processor(os.path.join(image_folder,'data',file),file_index,validation=True)
     os.remove(os.path.join(image_folder,'data',file))
     print('Parquet file ended')
-    print(f'End Index={file_index}')
+    print(f'End Index={file_index}')'''
 
 
 #train dataset part
 file_counter:int = 0
 file_index:int = 0
 #now let's get some parquet files, one batch at a time
-batch_size: int = 2
+batch_size: int = 16
 
+futures = []
 while(True):
-    with ThreadPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=16) as executor:
         for i in range(batch_size):
             file = random.choice(train_files)
             train_files.remove(file)
-            executor.submit(download_file,file)
+            futures.append(executor.submit(download_file,file))
             file_counter +=1
 
             #if there is no file left to process, break
             if len(train_files)==0:
                 break
     
-    #ensuring all threads complete their execution
-    executor.shutdown(wait=True)
+#ensuring all threads complete their execution
+    for future in futures:
+        try:
+            result = future.result()  # Wait for the thread to complete and get the result
+        except Exception as e:
+            print(f'Error')
 
     print(f"Saved a total of {file_counter} train files")
 
     selected_files = os.listdir(os.path.join(image_folder,'data'))
     os.system('clear')
+
+    futures=[]
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        for file in selected_files:
+            futures.append(executor.submit(parquet_processor,os.path.join(image_folder,'data',file),file_index))
+            file_index+=600
+    
+    #ensuring all threads complete their execution
+    for future in futures:
+        try:
+            result = future.result()  # Wait for the thread to complete and get the result
+        except Exception as e:
+            print(f'Error')
+
+    '''old code
     for file in selected_files:
         print(f'Start Index={file_index}')
         file_index=parquet_processor(os.path.join(image_folder,'data',file),file_index)
         os.remove(os.path.join(image_folder,'data',file))
         print('Parquet file ended')
         print(f'End Index={file_index}')
+'''
     if len(train_files)==0:
         break
