@@ -1,1 +1,3 @@
-[H[2J[3J
+execution finished for script: 10
+execution finished for script: 11
+execution finished for script: 12
