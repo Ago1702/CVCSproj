@@ -14,6 +14,6 @@
 
 
 cd ~/CVCSproj/model
-rm /work/cvcs2024/VisionWise/parquet/data/*
+
 source ~/CVCSproj/.venv/bin/activate
-bash ./sono_folle.bash 10
+bash ./sono_folle.bash 666

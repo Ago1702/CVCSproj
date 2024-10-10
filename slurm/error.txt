@@ -1,0 +1,2 @@
+rm: cannot remove '/work/cvcs2024/VisionWise/parquet/data': Is a directory
+bash: ./sono_folle.bash: No such file or directory
