@@ -6,11 +6,21 @@ import sys
 import io
 import requests
 import pandas as pd
+import re
 from PIL import Image
 
 from concurrent.futures import ThreadPoolExecutor
 from huggingface_hub import hf_hub_download
 from huggingface_hub import list_repo_files
+
+BLOCK_ID = 2 # it goes from 0 to 21 (22 possible cases)
+
+def extract_number(name):
+    # Find the first sequence of digits in the string
+    match = re.search(r'\d+', name)
+    if match:
+        return int(match.group())
+    return None
 
 def clean_directory(dir_abs_path: str):
     if dir_abs_path[0] != '/':
@@ -123,13 +133,13 @@ if len(sys.argv)==2:
         print('Basta che lo chiami e funziona, nient\'altro')
         sys.exit(0)
 
-image_folder: str = '/work/cvcs2024/VisionWise/parquet'
+image_folder: str = '/work/cvcs2024/VisionWise/parquet' 
 
 
-directories_to_clean: list[str] = ['/work/cvcs2024/VisionWise/parquet/data', '/work/cvcs2024/VisionWise/train','/work/cvcs2024/VisionWise/test']
+'''directories_to_clean: list[str] = ['/work/cvcs2024/VisionWise/parquet/data', '/work/cvcs2024/VisionWise/train','/work/cvcs2024/VisionWise/test']
 
 for dir in directories_to_clean:
-    clean_directory(dir)
+    clean_directory(dir)'''
 
 #getting data from huggingface hub
 repo_id = "elsaEU/ELSA_D3"
@@ -137,7 +147,7 @@ all_files = list_repo_files(repo_id=repo_id,repo_type="dataset")
 train_files, test_files =train_test_splitter(all_files)
 
 #test dataset part
-futures = []
+'''futures = []
 with ThreadPoolExecutor(max_workers=11) as executor:
         for file in test_files:
             futures.append(executor.submit(download_file,file))
@@ -168,7 +178,7 @@ for future in futures:
         try:
             result = future.result()  # Wait for the thread to complete and get the result
         except Exception as e:
-            print(f'Error')
+            print(f'Error')'''
 
 '''old code
 for file in selected_files:
@@ -182,12 +192,26 @@ for file in selected_files:
 
 #train dataset part
 file_counter:int = 0
-file_index:int = 0
+file_index:int = BLOCK_ID * 4000000
 #now let's get some parquet files, one batch at a time
 batch_size: int = 16
 
-futures = []
+#now i select only part of the parquet files
+new_list = []
+for element in train_files:  
+    try:
+        number = extract_number(element)
+        if number % 22 == BLOCK_ID:    
+            new_list.append(element)
+    except:
+        if BLOCK_ID == 21:
+            new_list.append(element)
+        else:
+            pass
+
+train_files = new_list
 while(True):
+    futures = []
     with ThreadPoolExecutor(max_workers=16) as executor:
         for i in range(batch_size):
             file = random.choice(train_files)
@@ -209,7 +233,7 @@ while(True):
     print(f"Saved a total of {file_counter} train files")
 
     selected_files = os.listdir(os.path.join(image_folder,'data'))
-    os.system('clear')
+    '''os.system('clear')'''
 
     futures=[]
     with ThreadPoolExecutor(max_workers=16) as executor:
