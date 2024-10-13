@@ -165,3 +165,5 @@ model/model.py
 model/bellidati.py
 /outputs
 test_image/
+CVCSproj.code-workspace
+bash.sh
