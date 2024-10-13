@@ -1,14 +1,19 @@
 import torch
 import random
+from typing import Union
+import os
 import io
+import re
+import subprocess
 import numpy as np
-from torch.utils.data import Dataset, DataLoader, IterableDataset
 import requests
+from torch.utils.data import Dataset, DataLoader, IterableDataset
+from pathlib import Path
 import torchvision.transforms.v2 as transforms
-from datasets import load_dataset
+#from datasets import load_dataset
 from torchvision.io import read_image
 from PIL import Image
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 class BufferedIterable(IterableDataset):
     """
@@ -27,7 +32,7 @@ class BufferedIterable(IterableDataset):
     def __init__(self, buffer_size:int):
         super(BufferedIterable).__init__()
         self.transform = transforms.Compose([transforms.PILToTensor()])
-        self.dataset = load_dataset("elsaEU/ELSA1M_track1", split="train", streaming=True)
+        self.dataset = []#load_dataset("elsaEU/ELSA1M_track1", split="train", streaming=True)
         self.buffer_size = buffer_size
     
     def __iter__(self):
@@ -88,6 +93,35 @@ class BufferedIterable(IterableDataset):
         tnr = torch.swapaxes(tnr, 0, 1)
         return tnr
 
+
+class DirectoryRandomDataset(IterableDataset):
+    FAKE:int = 1
+    REAL:int = 0
+
+    def __init__(self, dir: Union[str, Path], ext:str = "png"):
+        super().__init__()
+        if not isinstance(dir, Path):
+            dir = Path(dir)
+        if not dir.is_dir():
+            raise ValueError("The path have to be a directory")
+        self.dir = dir
+        out = subprocess.check_output(f"ls {self.dir.resolve()} | tail -n 1", shell=True)
+        self.leng = int(re.findall(r"\d+", str(out))[0])
+        self.label = {0 : "real", 1 : "fake"}
+        self.ext = ext
+        self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
+
+
+    def __iter__(self):
+        while(True):
+            i = np.random.choice(self.leng)
+            rf = np.random.choice([0, 1])
+            p = self.dir / f"test-{self.label[rf]}-{i:08d}.{self.ext}"
+            if p.exists():
+                image = Image.open(p).convert("RGB")
+                return self.tensorizzatore(image), torch.tensor(rf, dtype=torch.long)
+
+
 #   Test code
 """
 if __name__ == "__main__":
@@ -102,3 +136,6 @@ if __name__ == "__main__":
         print(el[1])
         i-=1
 """
+if __name__ == "__main__":
+    ds = DirectoryRandomDataset("//work//cvcs2024//VisionWise//test")
+    print(ds.__iter__())
