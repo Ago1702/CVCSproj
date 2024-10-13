@@ -110,16 +110,45 @@ class DirectoryRandomDataset(IterableDataset):
         self.label = {0 : "real", 1 : "fake"}
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
-
-
+        self.behaviour = self.__random_image__
+    
     def __iter__(self):
+        return self.behaviour()
+
+    def __random_real__(self):
+        while(True):
+            i = np.random.choice(self.leng)
+            p = self.dir / f"image-real-{i:08d}.{self.ext}"
+            if p.exists():
+                image = Image.open(p).convert("RGB")
+                yield self.tensorizzatore(image), torch.tensor(0, dtype=torch.long)
+
+    def __random_real__(self):
+        while(True):
+            i = np.random.choice(self.leng)
+            p = self.dir / f"image-fake-{i:08d}.{self.ext}"
+            if p.exists():
+                image = Image.open(p).convert("RGB")
+                yield self.tensorizzatore(image), torch.tensor(1, dtype=torch.long)
+    
+    def __random_couple__(self):
+        while(True):
+            i = np.random.choice(self.leng)
+            pr = self.dir / f"image-real-{i:08d}.{self.ext}"
+            pf = self.dir / f"image-fake-{i:08d}.{self.ext}"
+            if pf.exists() and pr.exists():
+                imagef = Image.open(pf).convert("RGB")
+                imager = Image.open(pr).convert("RGB")
+                yield self.tensorizzatore(imager), self.tensorizzatore(imagef)
+    
+    def __random_image__(self):
         while(True):
             i = np.random.choice(self.leng)
             rf = np.random.choice([0, 1])
-            p = self.dir / f"test-{self.label[rf]}-{i:08d}.{self.ext}"
+            p = self.dir / f"image-{self.label[rf]}-{i:08d}.{self.ext}"
             if p.exists():
                 image = Image.open(p).convert("RGB")
-                return self.tensorizzatore(image), torch.tensor(rf, dtype=torch.long)
+                yield self.tensorizzatore(image), torch.tensor(rf, dtype=torch.long)
 
 
 #   Test code
@@ -138,4 +167,5 @@ if __name__ == "__main__":
 """
 if __name__ == "__main__":
     ds = DirectoryRandomDataset("//work//cvcs2024//VisionWise//test")
-    print(ds.__iter__())
+    a = ds.__random_image__()
+    print(a())
