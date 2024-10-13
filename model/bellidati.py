@@ -10,6 +10,7 @@ import requests
 from torch.utils.data import Dataset, DataLoader, IterableDataset
 from pathlib import Path
 import torchvision.transforms.v2 as transforms
+from torchvision.utils import save_image
 #from datasets import load_dataset
 from torchvision.io import read_image
 from PIL import Image
@@ -93,12 +94,30 @@ class BufferedIterable(IterableDataset):
         tnr = torch.swapaxes(tnr, 0, 1)
         return tnr
 
-
 class DirectoryRandomDataset(IterableDataset):
+    """
+    An Iterable dataset for handling the enormous datatset of ELSA_D3
+
+    There are 4 main iteration modes:
+        - Extract a random image
+        - Extract a random real image
+        - Extract a random fake image
+        - Extract a random couple real/fake (semantic correlation)
+    
+    Use change_mod to change de modality
+        - BASE for 1st mode
+        - REAL for 2nd mode
+        - FAKE for 3rd mode
+        - COUP for 4th mode
+    - 
+    """
+
     FAKE:int = 1
     REAL:int = 0
+    BASE:int = 2
+    COUP:int = 3
 
-    def __init__(self, dir: Union[str, Path], ext:str = "png"):
+    def __init__(self, max_iter:int, dir: Union[str, Path], ext:str = "png"):
         super().__init__()
         if not isinstance(dir, Path):
             dir = Path(dir)
@@ -106,49 +125,96 @@ class DirectoryRandomDataset(IterableDataset):
             raise ValueError("The path have to be a directory")
         self.dir = dir
         out = subprocess.check_output(f"ls {self.dir.resolve()} | tail -n 1", shell=True)
-        self.leng = int(re.findall(r"\d+", str(out))[0])
+        self.leng = int(re.findall(r"\d+", str(out))[0]) + 1
         self.label = {0 : "real", 1 : "fake"}
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
         self.behaviour = self.__random_image__
+        self.max_iter = max_iter
+        self.iter = 0
     
     def __iter__(self):
-        return self.behaviour()
+        while(self.iter < self.max_iter):
+            i = np.random.choice(self.leng)
+            yield self.behaviour(i)
+            self.iter += 1
+        raise StopIteration
 
-    def __random_real__(self):
-        while(True):
-            i = np.random.choice(self.leng)
-            p = self.dir / f"image-real-{i:08d}.{self.ext}"
-            if p.exists():
-                image = Image.open(p).convert("RGB")
-                yield self.tensorizzatore(image), torch.tensor(0, dtype=torch.long)
+    def __random_real__(self, i:int):
+        p = self.dir / f"image-real-{i:08d}.{self.ext}"
+        if p.exists():
+            image = Image.open(p).convert("RGB")
+            return self.tensorizzatore(image), torch.tensor(0, dtype=torch.long)
 
-    def __random_real__(self):
-        while(True):
-            i = np.random.choice(self.leng)
-            p = self.dir / f"image-fake-{i:08d}.{self.ext}"
-            if p.exists():
-                image = Image.open(p).convert("RGB")
-                yield self.tensorizzatore(image), torch.tensor(1, dtype=torch.long)
+    def __random_fake__(self, i:int):
+        p = self.dir / f"image-fake-{i:08d}.{self.ext}"
+        if p.exists():
+            image = Image.open(p).convert("RGB")
+            return self.tensorizzatore(image), torch.tensor(1, dtype=torch.long)
     
-    def __random_couple__(self):
-        while(True):
-            i = np.random.choice(self.leng)
-            pr = self.dir / f"image-real-{i:08d}.{self.ext}"
-            pf = self.dir / f"image-fake-{i:08d}.{self.ext}"
-            if pf.exists() and pr.exists():
-                imagef = Image.open(pf).convert("RGB")
-                imager = Image.open(pr).convert("RGB")
-                yield self.tensorizzatore(imager), self.tensorizzatore(imagef)
+    def __random_couple__(self, i:int):
+        pr = self.dir / f"image-real-{i:08d}.{self.ext}"
+        pf = self.dir / f"image-fake-{i:08d}.{self.ext}"
+        if pf.exists() and pr.exists():
+            imagef = Image.open(pf).convert("RGB")
+            imager = Image.open(pr).convert("RGB")
+            return self.tensorizzatore(imager), self.tensorizzatore(imagef)
     
-    def __random_image__(self):
-        while(True):
-            i = np.random.choice(self.leng)
-            rf = np.random.choice([0, 1])
-            p = self.dir / f"image-{self.label[rf]}-{i:08d}.{self.ext}"
-            if p.exists():
-                image = Image.open(p).convert("RGB")
-                yield self.tensorizzatore(image), torch.tensor(rf, dtype=torch.long)
+    def __random_image__(self, i:int):
+        rf = np.random.choice([0, 1])
+        p = self.dir / f"image-{self.label[rf]}-{i:08d}.{self.ext}"
+        if p.exists():
+            image = Image.open(p).convert("RGB")
+            return self.tensorizzatore(image), torch.tensor(rf, dtype=torch.long)
+    
+    def change_mode(self, mode:int):
+        if mode == self.BASE:
+            self.behaviour = self.__random_image__
+        elif mode == self.REAL:
+            self.behaviour = self.__random_real__
+        elif mode == self.FAKE:
+            self.behaviour = self.__random_fake__
+        elif mode == self.COUP:
+            self.behaviour = self.__random_couple__
+
+class DirectorySequentialDataset(Dataset):
+    def __init__(self, dir: Union[str, Path], ext:str = "png"):
+        super().__init__()
+        if not isinstance(dir, Path):
+            dir = Path(dir)
+        if not dir.is_dir():
+            raise ValueError("The path have to be a directory")
+        self.dir = dir
+        self.ext = ext
+        self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
+        self.label = {0:"real", 1:"fake"}
+        if not (self.dir / "info").exists():
+            self.__write_info__()
+        else:
+            with open(self.dir / "info", "r") as f:
+                try:
+                    self.len = int(f.readline())
+                except Exception:
+                    self.__write_info__()
+            if (self.dir / f"image-real-{self.len//2:08d}.{self.ext}").exists():
+                self.__write_info__()
+
+    def __write_info__(self):
+        out = subprocess.check_output(f"ls -1 {self.dir.resolve()} | wc -l", shell=True)
+        self.len = int(re.findall(r"\d+", str(out))[0])
+        with open(self.dir / "info", "w") as f:
+            f.write(str(self.len))
+            f.close()
+
+    def __len__(self):
+        return self.len
+    
+    def __getitem__(self, index):
+        if index >= self.len:
+            raise IndexError()
+        return self.tensorizzatore(Image.open(self.dir / f"image-{self.label[index % 2]}-{index//2:08d}.{self.ext}").convert("RGB")), torch.tensor(index % 2, dtype=torch.long)
+
+
 
 
 #   Test code
@@ -164,8 +230,20 @@ if __name__ == "__main__":
         plt.show()
         print(el[1])
         i-=1
+
+if __name__ == "__main__":
+    ds = DirectoryRandomDataset(100, "//work//cvcs2024//VisionWise//test")
+    ds.change_mode(DirectoryRandomDataset.COUP)
+    it = ds.__iter__()
+    for i in range(10):
+        img = next(it)
+        save_image(img[0].double()/255, f"test_image/image{i}-0.png")
+        save_image(img[1].double()/255, f"test_image/image{i}-1.png")
+    print(ds.iter)
+
 """
 if __name__ == "__main__":
-    ds = DirectoryRandomDataset("//work//cvcs2024//VisionWise//test")
-    a = ds.__random_image__()
-    print(a())
+    ds = DirectorySequentialDataset("//work//cvcs2024//VisionWise//train")
+    for i in range(10):
+        img = ds.__getitem__(np.random.choice(ds.__len__()))
+        save_image(img[0].double()/255, f"test_image/image{i}-{img[1]}.png")
