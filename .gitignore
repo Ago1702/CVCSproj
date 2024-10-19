@@ -163,6 +163,7 @@ cython_debug/
 notebook/data.ipynb
 model/model.py
 /outputs
+outputs/garbage
 test_image/
 CVCSproj.code-workspace
 bash.sh
