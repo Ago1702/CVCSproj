@@ -1,12 +1,14 @@
 import torch
 import random
-from typing import Union
+import json
 import os
 import io
 import re
 import subprocess
 import numpy as np
 import requests
+from abc import ABC, abstractmethod
+from typing import Union
 from torch.utils.data import Dataset, DataLoader, IterableDataset
 from pathlib import Path
 import torchvision.transforms.v2 as transforms
@@ -94,6 +96,21 @@ class BufferedIterable(IterableDataset):
         tnr = torch.swapaxes(tnr, 0, 1)
         return tnr
 
+"""class DirectoryDataset(ABC):
+    def __init__(self, dir: Union[str, Path], ext:str = "png"):
+        if not isinstance(dir, Path):
+            dir = Path(dir)
+        if not dir.is_dir():
+            raise ValueError("The path have to be a directory")
+        self.dir = dir
+        self.ext = ext
+        if not (self.dir / ".info.json").exists():
+            self.__write_info__()
+        else:
+
+
+    def __write_info__()"""
+
 class DirectoryRandomDataset(IterableDataset):
     """
     An Iterable dataset for handling the enormous datatset of ELSA_D3
@@ -117,15 +134,20 @@ class DirectoryRandomDataset(IterableDataset):
     BASE:int = 2
     COUP:int = 3
 
-    def __init__(self, max_iter:int, dir: Union[str, Path], ext:str = "png"):
+    def __init__(self, dir: Union[str, Path], max_iter:int = 0, ext:str = "png", check:bool = False):
         super().__init__()
         if not isinstance(dir, Path):
             dir = Path(dir)
         if not dir.is_dir():
             raise ValueError("The path have to be a directory")
         self.dir = dir
-        out = subprocess.check_output(f"ls {self.dir.resolve()} | tail -n 1", shell=True)
-        self.leng = int(re.findall(r"\d+", str(out))[0]) + 1
+        if not (self.dir / ".info.json").exists() or check:
+            self.__write_info__()
+        else:
+            with open(self.dir / ".info.json") as f:
+                info = json.load(f)
+                self.len = info["len"]
+        self.len = self.len // 2
         self.label = {0 : "real", 1 : "fake"}
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
@@ -133,9 +155,16 @@ class DirectoryRandomDataset(IterableDataset):
         self.max_iter = max_iter
         self.iter = 0
     
+    def __write_info__(self):
+        out = subprocess.check_output(f"ls -1 {self.dir.resolve()} | wc -l", shell=True)
+        self.len = int(re.findall(r"\d+", str(out))[0])
+        data = {"len": self.len}
+        with open(self.dir / ".info.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
     def __iter__(self):
-        while(self.iter < self.max_iter):
-            i = np.random.choice(self.leng)
+        while(self.iter < self.max_iter or self.max_iter == 0):
+            i = np.random.choice(self.len)
             yield self.behaviour(i)
             self.iter += 1
         raise StopIteration
@@ -144,13 +173,16 @@ class DirectoryRandomDataset(IterableDataset):
         p = self.dir / f"image-real-{i:08d}.{self.ext}"
         if p.exists():
             image = Image.open(p).convert("RGB")
-            return self.tensorizzatore(image), torch.tensor(0, dtype=torch.long)
+            return self.tensorizzatore(image).unsqueeze(0).type(torch.float32), torch.tensor(0, dtype=torch.long)
+        else:
+            raise RuntimeError("Image not present, some problem occur")
 
     def __random_fake__(self, i:int):
         p = self.dir / f"image-fake-{i:08d}.{self.ext}"
         if p.exists():
             image = Image.open(p).convert("RGB")
-            return self.tensorizzatore(image), torch.tensor(1, dtype=torch.long)
+            return self.tensorizzatore(image).unsqueeze(0).type(torch.float32), torch.tensor(1, dtype=torch.long)
+        raise RuntimeError("Image not present, some problem occur")
     
     def __random_couple__(self, i:int):
         pr = self.dir / f"image-real-{i:08d}.{self.ext}"
@@ -158,14 +190,16 @@ class DirectoryRandomDataset(IterableDataset):
         if pf.exists() and pr.exists():
             imagef = Image.open(pf).convert("RGB")
             imager = Image.open(pr).convert("RGB")
-            return self.tensorizzatore(imager), self.tensorizzatore(imagef)
+            return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
+        raise RuntimeError("Image not present, some problem occur")
     
     def __random_image__(self, i:int):
         rf = np.random.choice([0, 1])
         p = self.dir / f"image-{self.label[rf]}-{i:08d}.{self.ext}"
         if p.exists():
             image = Image.open(p).convert("RGB")
-            return self.tensorizzatore(image), torch.tensor(rf, dtype=torch.long)
+            return self.tensorizzatore(image).unsqueeze(0).type(torch.float32), torch.tensor(rf, dtype=torch.long)
+        raise RuntimeError("Image not present, some problem occur")
     
     def change_mode(self, mode:int):
         if mode == self.BASE:
@@ -188,10 +222,10 @@ class DirectorySequentialDataset(Dataset):
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
         self.label = {0:"real", 1:"fake"}
-        if not (self.dir / "info").exists():
+        if not (self.dir / ".info").exists():
             self.__write_info__()
         else:
-            with open(self.dir / "info", "r") as f:
+            with open(self.dir / ".info", "r") as f:
                 try:
                     self.len = int(f.readline())
                 except Exception:
@@ -202,7 +236,10 @@ class DirectorySequentialDataset(Dataset):
     def __write_info__(self):
         out = subprocess.check_output(f"ls -1 {self.dir.resolve()} | wc -l", shell=True)
         self.len = int(re.findall(r"\d+", str(out))[0])
-        with open(self.dir / "info", "w") as f:
+        if(self.len % 2 != 0):
+            raise Exception("Someting wrong in enumeration")
+
+        with open(self.dir / ".info", "w") as f:
             f.write(str(self.len))
             f.close()
 
@@ -210,14 +247,17 @@ class DirectorySequentialDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
-        if index >= self.len:
+        if index >= self.len or index < 0:
             raise IndexError()
         return self.tensorizzatore(Image.open(self.dir / f"image-{self.label[index % 2]}-{index//2:08d}.{self.ext}").convert("RGB")), torch.tensor(index % 2, dtype=torch.long)
 
+"""
+TODO
+    Migliorare il dataset sequenziale
+TODO
+    Creare una superclasse per la gestione info
+"""
 
-
-
-#   Test code
 """
 if __name__ == "__main__":
     ds = BufferedIterable(4)
@@ -242,8 +282,3 @@ if __name__ == "__main__":
     print(ds.iter)
 
 """
-if __name__ == "__main__":
-    ds = DirectorySequentialDataset("//work//cvcs2024//VisionWise//train")
-    for i in range(10):
-        img = ds.__getitem__(np.random.choice(ds.__len__()))
-        save_image(img[0].double()/255, f"test_image/image{i}-{img[1]}.png")
