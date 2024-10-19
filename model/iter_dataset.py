@@ -135,6 +135,14 @@ class DirectoryRandomDataset(IterableDataset):
     COUP:int = 3
 
     def __init__(self, dir: Union[str, Path], max_iter:int = 0, ext:str = "png", check:bool = False):
+        """
+        Args:
+            dir (Union[str, Path]): dataset directory
+            max_iter (int, optional): max iteration number, if 0 iteration are infinite. Defaults to 0.
+            ext (str, optional): The image file extension. Defaults to "png".
+            check (bool, optional): If true forces the creation of a .info.json file.ù
+                This file wille contain dataset info. Defaults to False.
+        """
         super().__init__()
         if not isinstance(dir, Path):
             dir = Path(dir)
@@ -156,6 +164,11 @@ class DirectoryRandomDataset(IterableDataset):
         self.iter = 0
     
     def __write_info__(self):
+        """
+        A method for writing the info file.
+        For now it contain:
+            len: the dataset size
+        """
         out = subprocess.check_output(f"ls -1 {self.dir.resolve()} | wc -l", shell=True)
         self.len = int(re.findall(r"\d+", str(out))[0])
         data = {"len": self.len}
@@ -168,7 +181,11 @@ class DirectoryRandomDataset(IterableDataset):
             yield self.behaviour(i)
             self.iter += 1
         raise StopIteration
-
+    
+    """
+    Different method for extractions.
+    Check change mode
+    """
     def __random_real__(self, i:int):
         p = self.dir / f"image-real-{i:08d}.{self.ext}"
         if p.exists():
@@ -202,6 +219,18 @@ class DirectoryRandomDataset(IterableDataset):
         raise RuntimeError("Image not present, some problem occur")
     
     def change_mode(self, mode:int):
+        """
+        Modify the behaviour
+        Use classes costant
+
+        BASE: return a random image and label
+        REAL: return a random real image and label
+        FAKE: return a random fake image and label
+        COUP: return two semantic correlated images the first is real, the latter is fake
+
+        Args:
+            mode (int): _description_
+        """
         if mode == self.BASE:
             self.behaviour = self.__random_image__
         elif mode == self.REAL:
