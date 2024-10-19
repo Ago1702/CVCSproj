@@ -1,1 +1,2 @@
-srun --partition=all_serial --account=cvcs2024 --gres=gpu:1 --pty bash --time=01:00:00
+esempio comando slurm:      srun --partition=all_serial --account=cvcs2024 --gres=gpu:1 --time=23:00:00 --pty bash
+attivazione ambiente pip:   source .venv/bin/activate
