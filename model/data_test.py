@@ -1,4 +1,4 @@
-import model.bellidati as bellidati
+import model.iter_dataset as iter_dataset
 import unittest
 import torch
 import subprocess
@@ -15,7 +15,7 @@ def no_info(dir, sam:int = SAM):
     else:
         supp = dir / ".info.json"
     supp.unlink(missing_ok=True)
-    ds = bellidati.DirectoryRandomDataset(dir)
+    ds = iter_dataset.DirectoryRandomDataset(dir)
     iter_test(ds, sam)
     print("No info passed")
 
@@ -40,13 +40,13 @@ def iter_test(ds, sam:int):
 def with_info(dir, sam:int = SAM):
     if not isinstance(dir, Path):
         supp = Path(dir)
-    ds = bellidati.DirectoryRandomDataset(dir)
+    ds = iter_dataset.DirectoryRandomDataset(dir)
     assert ds.len > 0
     iter_test(ds, sam)
     print("With info passed")
 
 def true_test(dir, sam:int = SAM):
-    ds = bellidati.DirectoryRandomDataset(dir)
+    ds = iter_dataset.DirectoryRandomDataset(dir)
     it = ds.__iter__()
     ds.change_mode(ds.REAL)
     for i in range(sam):
@@ -59,7 +59,7 @@ def true_test(dir, sam:int = SAM):
     print("True Test passed")
 
 def fake_test(dir, sam:int = SAM):
-    ds = bellidati.DirectoryRandomDataset(dir)
+    ds = iter_dataset.DirectoryRandomDataset(dir)
     it = ds.__iter__()
     ds.change_mode(ds.FAKE)
     for i in range(sam):
@@ -72,7 +72,7 @@ def fake_test(dir, sam:int = SAM):
     print("Fake Test passed")
 
 def coup_test(dir, sam:int = SAM):
-    ds = bellidati.DirectoryRandomDataset(dir)
+    ds = iter_dataset.DirectoryRandomDataset(dir)
     it = ds.__iter__()
     ds.change_mode(ds.COUP)
     for i in range(sam):
@@ -85,7 +85,7 @@ def coup_test(dir, sam:int = SAM):
 
 def fake_dir(dir:Union[str, Path]):
     try:
-        ds = bellidati.DirectoryRandomDataset(dir)
+        ds = iter_dataset.DirectoryRandomDataset(dir)
     except ValueError as e:
         assert e.__str__() == "The path have to be a directory"
         print("Fake dir passed")
@@ -94,7 +94,7 @@ def fake_dir(dir:Union[str, Path]):
 
 def wrong_form(dir):
     try:
-        ds = bellidati.DirectoryRandomDataset(dir, ext="alaksa")
+        ds = iter_dataset.DirectoryRandomDataset(dir, ext="alaksa")
         next(ds.__iter__())
     except RuntimeError as e:
         assert e.__str__() == "Image not present, some problem occur"
@@ -112,7 +112,7 @@ def correct_info(dir):
     assert dlen % 2 == 0
     out = subprocess.check_output(f"ls -1 {supp.resolve()} | wc -l", shell=True)
     assert dlen == int(re.findall(r"\d+", str(out))[0])
-    ds = bellidati.DirectoryRandomDataset(dir, check=True)
+    ds = iter_dataset.DirectoryRandomDataset(dir, check=True)
     assert dlen // 2 == ds.len
     print("Correct info")
 
