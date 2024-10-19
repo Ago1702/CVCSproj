@@ -7,8 +7,10 @@ import json
 from pathlib import Path
 from typing import Union
 
+#Number of sample extracted for every test
 SAM:int = 2000
 
+# Check dataset func without info file
 def no_info(dir, sam:int = SAM):
     if not isinstance(dir, Path):
         supp = Path(dir) / ".info.json"
@@ -19,6 +21,7 @@ def no_info(dir, sam:int = SAM):
     iter_test(ds, sam)
     print("No info passed")
 
+#Check image
 def check_image(img):
     assert isinstance(img, torch.Tensor)
     shape = img.shape
@@ -26,6 +29,7 @@ def check_image(img):
     assert shape[0] == 1 and shape[1] == 3 and shape[2] != 0 and shape[3] != 0
     assert img.dtype == torch.float32
 
+#Try to iterae over sam element
 def iter_test(ds, sam:int):
     it = ds.__iter__()
     for i in range(sam):
@@ -37,6 +41,7 @@ def iter_test(ds, sam:int):
             print(f"Test {i + 1} passed!")
     assert i == sam - 1
 
+#Check dataset functionality with info file
 def with_info(dir, sam:int = SAM):
     if not isinstance(dir, Path):
         supp = Path(dir)
@@ -45,6 +50,7 @@ def with_info(dir, sam:int = SAM):
     iter_test(ds, sam)
     print("With info passed")
 
+#Check dataset func with true mode
 def true_test(dir, sam:int = SAM):
     ds = iter_dataset.DirectoryRandomDataset(dir)
     it = ds.__iter__()
@@ -58,6 +64,7 @@ def true_test(dir, sam:int = SAM):
             print(f"Test {i + 1} passed!")
     print("True Test passed")
 
+#Check dataset func with fake mode
 def fake_test(dir, sam:int = SAM):
     ds = iter_dataset.DirectoryRandomDataset(dir)
     it = ds.__iter__()
@@ -71,6 +78,7 @@ def fake_test(dir, sam:int = SAM):
             print(f"Test {i + 1} passed!")
     print("Fake Test passed")
 
+#Check dataset func with couple mode
 def coup_test(dir, sam:int = SAM):
     ds = iter_dataset.DirectoryRandomDataset(dir)
     it = ds.__iter__()
@@ -83,6 +91,7 @@ def coup_test(dir, sam:int = SAM):
             print(f"Test {i + 1} passed!")
     print("Couple Test passed")
 
+#Check dataset func with wrong directory
 def fake_dir(dir:Union[str, Path]):
     try:
         ds = iter_dataset.DirectoryRandomDataset(dir)
@@ -92,6 +101,7 @@ def fake_dir(dir:Union[str, Path]):
         return
     assert False
 
+#Check dataset func with wrong format
 def wrong_form(dir):
     try:
         ds = iter_dataset.DirectoryRandomDataset(dir, ext="alaksa")
@@ -102,6 +112,7 @@ def wrong_form(dir):
         return
     assert False
 
+#Check the info file correcteness
 def correct_info(dir):
     if not isinstance(dir, Path):
         supp = Path(dir)
