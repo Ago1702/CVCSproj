@@ -3,6 +3,8 @@ import cv2.data
 import torch
 import random
 import numpy as np
+import math
+import torch.nn.functional as F
 from numpy.random import PCG64
 from skimage import data
 from torchvision.transforms import v2
@@ -94,7 +96,8 @@ class RandomTransform(v2.Transform):
     """
     GLOBAL_CROP: int = 0
     LOCAL_CROP: int = 1
-
+    GLOBAL_CROP_SIZE: tuple[int,int] = (200,200)
+    LOCAL_CROP_SIZE: tuple[int,int]= (80,80)
     def __init__(self, p:float = 0.5, scale:float=0.8,
                  transform:tuple = (v2.RandomPerspective(p=1), v2.RandomAffine(90), v2.GaussianBlur(3), v2.RandomAdjustSharpness(2, 1),
                                     v2.RandomHorizontalFlip(p=1),v2.RandomVerticalFlip(p=1)),
@@ -143,9 +146,9 @@ class RandomTransform(v2.Transform):
                 break
         size:tuple = (0,0)
         if self.cropping_mode==self.GLOBAL_CROP:
-            size = (200,200)
+            size = self.GLOBAL_CROP_SIZE
         if self.cropping_mode==self.LOCAL_CROP:
-            size = (80,80)
+            size = self.LOCAL_CROP_SIZE
         
         if self.pacman:
             if image.size(2)>350 and self.cropping_mode==self.LOCAL_CROP:
@@ -160,7 +163,7 @@ class RandomTransform(v2.Transform):
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         """
         Apply a random subset of transformation to an image.
-        For more detail about the random set view 'get_transform' method.
+        For more details about the random set view 'get_transform' method.
 
         Args:
             x (torch.Tensor): The input image
@@ -168,7 +171,17 @@ class RandomTransform(v2.Transform):
         Returns:
             torch.Tensor: The transformed image
         """
-
+        if x.dim() != 4:
+            raise RuntimeError('Tensors must be 4 dimensional: batch_size, channels, height, width') 
+        smallest_dimension = min(x.size(2),x.size(3))
+        if smallest_dimension < 200:
+            scale = math.ceil(200/smallest_dimension)
+            if scale > 4:
+                raise RuntimeError('Strange value for scale: {scale}')
+            
+            x = F.interpolate(x,scale_factor=scale, mode='bilinear', align_corners=False)
+            
+        x = x/255
         return self.get_transform(x).forward(x)
     
     def __call__(self, x)->torch.Tensor:
