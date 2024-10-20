@@ -1,0 +1,4 @@
+La questione loss è difficile. Il paper dei prof di riferimento applica una loss in cui un elemento
+E' attratto verso un elemento della stessa classe, E allontanato da tutti gli elementi dell'altra
+classe presenti nel batch
+Si potrebbe provare a includere, nella contrastive loss, l'immagine sorella, dandole più peso del normale
