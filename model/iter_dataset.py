@@ -4,6 +4,7 @@ import json
 import os
 import io
 import re
+import shutil
 import subprocess
 import numpy as np
 import requests
@@ -17,6 +18,7 @@ from torchvision.utils import save_image
 from torchvision.io import read_image
 from PIL import Image
 #import matplotlib.pyplot as plt
+
 
 class BufferedIterable(IterableDataset):
     """
@@ -211,12 +213,54 @@ class DirectoryRandomDataset(IterableDataset):
         raise RuntimeError("Image not present, some problem occur")
     
     def __random_image__(self, i:int):
-        rf = np.random.choice([0, 1])
-        p = self.dir / f"image-{self.label[rf]}-{i:08d}.{self.ext}"
-        if p.exists():
-            image = Image.open(p).convert("RGB")
+        #this part has experimental edits. porting into the other modes will possibly come into the future
+
+        #iteration is performed to have infinite retries, if something goes wrong
+        while True:
+            #preparing the image paths, and the paths of the previous images
+            if i<0:
+                raise RuntimeError('Negative i (????????????????????????)')
+            rf = np.random.choice([0, 1])
+            p = self.dir / f"image-{self.label[rf]}-{i:08d}.{self.ext}"
+            emergency_p = self.dir / f"image-{self.label[rf]}-{(i-1):08d}.{self.ext}"
+
+            counterpart_rf = 1 - rf
+            counterpart_p = self.dir / f"image-{self.label[counterpart_rf]}-{i:08d}.{self.ext}"
+            counterpart_emergency_p = self.dir / f"image-{self.label[counterpart_rf]}-{(i-1):08d}.{self.ext}"
+
+            #now RGBA to RGB conversion will be performed
+            if p.exists():
+                try:
+                    image = Image.open(p)
+                except:
+                    shutil.copy(emergency_p, p)
+                    shutil.copy(counterpart_emergency_p, counterpart_p)
+                    i-=1
+                    print('A corrupted image was found')
+                    continue
+                
+                #checking if the image has transparency
+                if image.mode == 'P' and 'transparency' in image.info:
+                    #create a new image with a black background
+                    background = Image.new("RGB", image.size, (0, 0, 0))  # Black background
+                    #paste the original image onto the background
+                    background.paste(image.convert("RGBA"), (0, 0), image.convert("RGBA"))  # Use alpha channel as mask
+                    image = background  # Now the image is in RGB format
+
+                #convert to RGB if it's not already in that mode
+                if image.mode != 'RGB':
+                    image = image.convert("RGB")
+
+
+                width, height = image.size
+                if width ==1 or height ==1:
+                    shutil.copy(emergency_p, p)
+                    shutil.copy(counterpart_emergency_p, counterpart_p)
+                    i-=1
+                    print('A 1x1 image was found')
+                    continue
             return self.tensorizzatore(image).unsqueeze(0).type(torch.float32), torch.tensor(rf, dtype=torch.long)
-        raise RuntimeError("Image not present, some problem occur")
+            raise RuntimeError("Image not present, some problem occured")
     
     def change_mode(self, mode:int):
         """

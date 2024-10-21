@@ -3,7 +3,7 @@ import torch.nn as nn
 import os
 import sys
 from utils.modules import MultiCBAM
-from bellidati import DirectoryRandomDataset
+from iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
 import torch.optim as optim
 

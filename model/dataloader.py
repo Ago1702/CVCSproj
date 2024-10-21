@@ -70,13 +70,21 @@ class TransformDataLoader(DataLoader):
         y_batch_tensor: torch.Tensor = torch.stack(y_batch_list)
 
         return x_batch_tensor , y_batch_tensor
+    
+    def __iter__(self):
+        for batch in super().__iter__():
+            yield batch[0].cuda() , batch[1].cuda()
+        
 
-'''
+
 if __name__ == "__main__":
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
-    data_loader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP,dataset=dataset,num_workers=1)
+    data_loader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP,dataset=dataset,num_workers=8)
+    num_iterations = 0
     for images, labels in data_loader:
-        for i in range(images.size(0)):
+        print(num_iterations)
+        num_iterations+=1
+        '''for i in range(images.size(0)):
             
             path=''
             if labels[i]==DirectoryRandomDataset.FAKE:
@@ -86,6 +94,6 @@ if __name__ == "__main__":
             else:
                 raise RuntimeError(f'Unexpected label found: {labels[i]}')
             
-            save_image(images[i],path)
+            save_image(images[i],path)'''
 
-        break'''
+        
