@@ -66,7 +66,7 @@ class TransformDataLoader(DataLoader):
             x_batch_list.append(self.transform(image))
             y_batch_list.append(label)
  
-        x_batch_tensor: torch.Tensor = torch.stack(x_batch_list)
+        x_batch_tensor: torch.Tensor = torch.stack(x_batch_list).squeeze(1)
         y_batch_tensor: torch.Tensor = torch.stack(y_batch_list)
 
         return x_batch_tensor , y_batch_tensor
@@ -92,8 +92,10 @@ if __name__ == "__main__":
 
     #now iterate like that on the dataloader
     for images, labels in data_loader:
-        print(num_iterations)
+        print(images.size())
+        print(labels.size())
         num_iterations+=1
+
         '''for i in range(images.size(0)):
             
             path=''
