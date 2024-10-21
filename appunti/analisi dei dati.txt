@@ -30,3 +30,5 @@ Abbiamo scelto empiricamente una finestra che va da 7/30 a 13/30 (ma abbiamo pro
 
 Risultati sul random crop da libreria:
 Ha un bias verso il centro della foto (E' male? boh, vediamo i risultati più avanti)
+
+NB: In futuro provare come performa il modello lasciando o togliendo le immagini reali che hanno dimensione troppo piccola

@@ -78,9 +78,19 @@ class TransformDataLoader(DataLoader):
 
 
 if __name__ == "__main__":
+
+    #example of usage
+
+    #first declare the dataset object
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
-    data_loader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP,dataset=dataset,num_workers=8)
+
+    #then give the dataset object to the dataloader
+    data_loader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP,dataset=dataset,num_workers=8,batch_size=32)
+
+
     num_iterations = 0
+
+    #now iterate like that on the dataloader
     for images, labels in data_loader:
         print(num_iterations)
         num_iterations+=1

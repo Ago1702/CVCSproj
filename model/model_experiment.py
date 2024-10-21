@@ -6,7 +6,7 @@ from utils.modules import MultiCBAM
 from iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
 import torch.optim as optim
-
+from dataloader 
 
 class DummyCBAM_1(nn.Module):
     def __init__(self):
@@ -39,8 +39,8 @@ if __name__ == '__main__':
     # checking if CUDA is available
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Did you use the slurm force?")
-    dataset = DirectoryRandomDataset(max_iter = 5000, dir='/work/cvcs2024/VisionWise/test')
-    
+    dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/test')
+    dataloader = 
     model = DummyCBAM_1().cuda()
     iterator = dataset.__iter__()
 
