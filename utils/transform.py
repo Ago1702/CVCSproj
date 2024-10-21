@@ -176,8 +176,8 @@ class RandomTransform(v2.Transform):
         smallest_dimension = min(x.size(2),x.size(3))
         if smallest_dimension < 200:
             scale = math.ceil(200/smallest_dimension)
-            if scale > 4:
-                raise RuntimeError('Strange value for scale: {scale}')
+            if scale > 20:
+                raise RuntimeError(f'Strange value for scale: {scale}. Dimensions were {x.size(0)} , {x.size(1)},{x.size(2)} , {x.size(3)}')
             
             x = F.interpolate(x,scale_factor=scale, mode='bilinear', align_corners=False)
             
