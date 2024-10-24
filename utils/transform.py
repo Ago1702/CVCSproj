@@ -181,7 +181,6 @@ class RandomTransform(v2.Transform):
             
             x = F.interpolate(x,scale_factor=scale, mode='bilinear', align_corners=False)
             
-        x = x/255
         return self.get_transform(x).forward(x)
     
     def __call__(self, x)->torch.Tensor:

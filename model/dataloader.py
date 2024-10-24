@@ -24,7 +24,23 @@ class TransformDataLoader(DataLoader):
         custom_collate(batch) : a function declared as a method to be class aware. stacks images into a unique tensor
 
     '''
-    def __init__(self, cropping_mode:int ,dataset:DirectoryRandomDataset, num_workers: int, batch_size:int =32,num_channels:int = 3):
+    def __init__(self, cropping_mode:int ,dataset:DirectoryRandomDataset, num_workers: int, batch_size:int =32,num_channels:int = 3
+                 , probability: float = 0.5, pacman : bool = False
+                 ):
+        
+        '''
+        Initializes the transform data loader
+
+        Args:
+            cropping_mode (int) : it will be passed to the RandomTransform. Must be either RandomTransform.LOCAL_CROP or RandomTransform.GLOBAL_CROP
+            dataset (DirectoryRandomDataset) : the dataset class. Support for different dataset classes may be added in the future.
+            num_workers (int) : the number of workers that the superclass will automatically
+            batch_size (int) : first dimension of the images tensor that the dataloader will return
+            num_channels (int) : second dimension of the images tensor that the dataloader will return
+            probability (float) : probability that a transformation will be applied. It will be passed to the RandomTransform constructor
+        Attributes: 
+            tuple[torch.Tensor , torch.Tensor] : a tuple, containing the stacked images and the stacked labels
+        '''
         #error handling
         if not torch.cuda.is_available():
             raise RuntimeError('CUDA not available (????????)')
@@ -32,7 +48,7 @@ class TransformDataLoader(DataLoader):
             raise RuntimeError(f'TransformDataLoader was called with an invalid cropping_mode: {cropping_mode} .Look at the TransformDataLoader documentation.')
         
         super().__init__(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=self.custom_collate)
-        self.transform = RandomTransform(cropping_mode=cropping_mode) #using default constructor values 
+        self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman)
         self.cropping_mode = cropping_mode
         self.num_channels = num_channels
     
@@ -69,11 +85,18 @@ class TransformDataLoader(DataLoader):
         x_batch_tensor: torch.Tensor = torch.stack(x_batch_list).squeeze(1)
         y_batch_tensor: torch.Tensor = torch.stack(y_batch_list)
 
+        x_min = torch.min(x_batch_tensor)
+        x_max = torch.max(x_batch_tensor)
+
+        x_batch_tensor = (x_batch_tensor - x_min) / (x_max - x_min)
+
         return x_batch_tensor , y_batch_tensor
     
     def __iter__(self):
         for batch in super().__iter__():
-            yield batch[0].cuda() , batch[1].cuda()
+            yield torch.clamp(batch[0].cuda(),min = 0.0,max = 1.0) , batch[1].unsqueeze(1).cuda() 
+            #perché unqueeze? le reti neurali vogliono le etichette in due dimensioni, nel formato: (N_labels,1)
+            #clamp per evitare che ci siano delle cifre decimali sul max 
         
 
 

@@ -232,35 +232,41 @@ class DirectoryRandomDataset(IterableDataset):
             if p.exists():
                 try:
                     image = Image.open(p)
+                    #checking if the image has transparency
+                    if image.mode == 'P':
+                        #create a new image with a black background
+                        background = Image.new("RGB", image.size, (0, 0, 0))  # Black background
+                        #paste the original image onto the background
+                        background.paste(image.convert("RGBA"), (0, 0), image.convert("RGBA"))  # Use alpha channel as mask
+                        image = background  # Now the image is in RGB format
+
+                    #convert to RGB if it's not already in that mode
+                    if image.mode != 'RGB':
+                        image = image.convert("RGB")
+
+                    width, height = image.size
+                    if width ==1 or height ==1:
+                        '''shutil.copy(emergency_p, p)
+                        shutil.copy(counterpart_emergency_p, counterpart_p)'''
+                        i-=1
+                        print('A 1x1 image was found')
+                        continue
                 except:
-                    shutil.copy(emergency_p, p)
-                    shutil.copy(counterpart_emergency_p, counterpart_p)
+                    '''shutil.copy(emergency_p, p)
+                    shutil.copy(counterpart_emergency_p, counterpart_p)'''
                     i-=1
                     print('A corrupted image was found')
                     continue
                 
-                #checking if the image has transparency
-                if image.mode == 'P' and 'transparency' in image.info:
-                    #create a new image with a black background
-                    background = Image.new("RGB", image.size, (0, 0, 0))  # Black background
-                    #paste the original image onto the background
-                    background.paste(image.convert("RGBA"), (0, 0), image.convert("RGBA"))  # Use alpha channel as mask
-                    image = background  # Now the image is in RGB format
+            try:    
+                return self.tensorizzatore(image).unsqueeze(0).type(torch.float32), torch.tensor(rf, dtype=torch.long)
+            except:
+                '''shutil.copy(emergency_p, p)
+                shutil.copy(counterpart_emergency_p, counterpart_p)'''
+                i-=1
+                print('A corrupted image was found')
+                continue
 
-                #convert to RGB if it's not already in that mode
-                if image.mode != 'RGB':
-                    image = image.convert("RGB")
-
-
-                width, height = image.size
-                if width ==1 or height ==1:
-                    shutil.copy(emergency_p, p)
-                    shutil.copy(counterpart_emergency_p, counterpart_p)
-                    i-=1
-                    print('A 1x1 image was found')
-                    continue
-            return self.tensorizzatore(image).unsqueeze(0).type(torch.float32), torch.tensor(rf, dtype=torch.long)
-            raise RuntimeError("Image not present, some problem occured")
     
     def change_mode(self, mode:int):
         """
