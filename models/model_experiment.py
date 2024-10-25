@@ -51,7 +51,7 @@ if __name__ == '__main__':
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is not available. Did you use the slurm force?")
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/test')
-    dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP,dataset,num_workers=1,batch_size=20,probability=0.4,pacman=True)
+    dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP,dataset,num_workers=1,batch_size=32,probability=0.4,pacman=True)
     model = DummyCBAM_1().cuda()
 
     #let's make it parallel
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     optimizer.zero_grad()
     
-    batch_size = 5000
+    batch_size = 500
     
     for index, (images, labels) in enumerate(dataloader):
         if (index+1) % 20 ==0:
