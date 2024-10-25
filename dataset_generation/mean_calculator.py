@@ -3,10 +3,10 @@ import torch.nn as nn
 
 import sys
 from utils.modules import MultiCBAM
-from models.iter_dataset import DirectoryRandomDataset
+from model.iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
 import torch.optim as optim
-from models.dataloader import TransformDataLoader
+from model.dataloader import TransformDataLoader
 import numpy as np
 
 dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')

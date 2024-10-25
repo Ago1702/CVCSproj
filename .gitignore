@@ -167,3 +167,9 @@ outputs/garbage
 test_image/
 CVCSproj.code-workspace
 bash.sh
+res_weight.pth
+output.txt
+error.txt
+slurm/output.txt
+output.txt
+error.txt
