@@ -6,9 +6,9 @@ import torch.optim as optim
 from torch import nn as nn
 from torchvision import models
 from torchvision.transforms import v2
-from model.iter_dataset import DirectoryRandomDataset
+from models.iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
-from model.dataloader import TransformDataLoader
+from models.dataloader import TransformDataLoader
 
 if __name__ == "__main__":
     if not torch.cuda.is_available():

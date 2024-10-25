@@ -2,7 +2,7 @@ import torch
 import os
 from PIL import Image
 from torch.utils.data import DataLoader
-from model.iter_dataset import DirectoryRandomDataset
+from models.iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
 from torchvision.utils import save_image
 
