@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from utils.modules import MultiCBAM
-from iter_dataset import DirectoryRandomDataset
+from data.iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
-from dataloader import TransformDataLoader
+from data.dataloader import TransformDataLoader
 
 
 class DummyCBAM_1(nn.Module):
