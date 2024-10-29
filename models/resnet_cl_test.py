@@ -25,7 +25,7 @@ if __name__ == "__main__":
         res_net.eval()
 
     res_net = res_net.cuda()
-        
+    res_net = nn.DataParallel(res_net)
 
     criterion = nn.BCELoss()
     optimizer = optim.Adam(res_net.parameters(), lr = 0.001)

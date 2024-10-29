@@ -2,10 +2,10 @@ import torch
 import os
 from PIL import Image
 from torch.utils.data import DataLoader
-from models.iter_dataset import DirectoryRandomDataset
+from data.iter_dataset import DirectoryRandomDataset
 from utils.transform import RandomTransform
 from torchvision.utils import save_image
-
+import gc
 
 class TransformDataLoader(DataLoader):
     '''
@@ -24,7 +24,7 @@ class TransformDataLoader(DataLoader):
         custom_collate(batch) : a function declared as a method to be class aware. stacks images into a unique tensor
 
     '''
-    def __init__(self, cropping_mode:int ,dataset:DirectoryRandomDataset, num_workers: int, batch_size:int =32,num_channels:int = 3
+    def __init__(self, cropping_mode:int ,dataset:DirectoryRandomDataset, num_workers: int,dataset_mode:int, batch_size:int =32,num_channels:int = 3
                  , probability: float = 0.5, pacman : bool = False
                  ):
         
@@ -35,7 +35,8 @@ class TransformDataLoader(DataLoader):
             cropping_mode (int) : it will be passed to the RandomTransform. Must be either RandomTransform.LOCAL_CROP or RandomTransform.GLOBAL_CROP
             dataset (DirectoryRandomDataset) : the dataset class. Support for different dataset classes may be added in the future.
             num_workers (int) : the number of workers that the superclass will automatically
-            batch_size (int) : first dimension of the images tensor that the dataloader will return
+            dataset_mode (int) : one of RandomDirectoryDataset.COUP or RandomDirectoryDataset.BASE
+            batch_size (int) : first dimension of the images tensor that the dataloader will return. MUST be an even number
             num_channels (int) : second dimension of the images tensor that the dataloader will return
             probability (float) : probability that a transformation will be applied. It will be passed to the RandomTransform constructor
         Attributes: 
@@ -46,12 +47,21 @@ class TransformDataLoader(DataLoader):
             raise RuntimeError('CUDA not available (????????)')
         if cropping_mode != RandomTransform.GLOBAL_CROP and cropping_mode != RandomTransform.LOCAL_CROP:
             raise RuntimeError(f'TransformDataLoader was called with an invalid cropping_mode: {cropping_mode} .Look at the TransformDataLoader documentation.')
-        
+        if dataset_mode not in [DirectoryRandomDataset.BASE,DirectoryRandomDataset.COUP]:
+            raise RuntimeError(f'Invalid dataset_mode: {dataset_mode}')
+        if batch_size%2 != 0:
+            raise RuntimeError(f'batch_size must be even')
+
+        dataset.change_mode(dataset_mode)
+
+        if dataset_mode ==DirectoryRandomDataset.COUP:
+            batch_size=int(batch_size/2)
+
         super().__init__(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=self.custom_collate)
         self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman)
         self.cropping_mode = cropping_mode
         self.num_channels = num_channels
-    
+        self.dataset_mode = dataset_mode
 
     def custom_collate(self,batch):
         '''
@@ -60,7 +70,7 @@ class TransformDataLoader(DataLoader):
         This method is a custom version of the default one. Its role is taking a list of samples from the dataset, transforming and stacking them.
 
         Args:
-            batch (list[tuple[torch.Tensor , torch.Tensor]]) : the batch, in which the first tensor is the image, and the second is the label
+            batch (list[tuple[torch.Tensor , torch.Tensor]]) : the batch, in which the first tensor is the image, and the second is the label (in base mode)
 
         Returns:
             tuple[torch.Tensor , torch.Tensor] : a tuple, containing the stacked images and the stacked labels
@@ -78,16 +88,28 @@ class TransformDataLoader(DataLoader):
         x_batch_list: list[torch.Tensor] = []
         y_batch_list: list[torch.Tensor] = []
         
-        for image, label in batch:
-            x_batch_list.append(self.transform(image))
-            y_batch_list.append(label)
- 
+    
+        if self.dataset_mode == DirectoryRandomDataset.BASE:
+            for image, label in batch:
+                x_batch_list.append(self.transform(image))
+                y_batch_list.append(label)
+                gc.collect()
+
+        elif self.dataset_mode == DirectoryRandomDataset.COUP:
+            for couple in batch:
+                x_batch_list.append(self.transform(couple[0])) #real
+                x_batch_list.append(self.transform(couple[1])) #fake
+                y_batch_list.append(torch.tensor(0, dtype=torch.long))
+                y_batch_list.append(torch.tensor(1, dtype=torch.long))
+                gc.collect()
+
         x_batch_tensor: torch.Tensor = torch.stack(x_batch_list).squeeze(1)
         y_batch_tensor: torch.Tensor = torch.stack(y_batch_list)
 
         x_min = torch.min(x_batch_tensor)
         x_max = torch.max(x_batch_tensor)
-
+        gc.collect()
+        
         x_batch_tensor = (x_batch_tensor - x_min) / (x_max - x_min)
 
         return x_batch_tensor , y_batch_tensor
@@ -108,7 +130,7 @@ if __name__ == "__main__":
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
 
     #then give the dataset object to the dataloader
-    data_loader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP,dataset=dataset,num_workers=8,batch_size=32)
+    data_loader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP,dataset=dataset,num_workers=8,batch_size=32,dataset_mode=DirectoryRandomDataset.COUP)
 
 
     num_iterations = 0

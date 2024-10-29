@@ -19,6 +19,34 @@ from torchvision.io import read_image
 from PIL import Image
 #import matplotlib.pyplot as plt
 
+def remove_transparency(image):
+    if image.mode == 'P':
+        #create a new image with a black background
+        background = Image.new("RGB", image.size, (0, 0, 0))  #black background
+        #paste the original image onto the background using its alpha channel as mask
+        background.paste(image.convert("RGBA"), (0, 0), image.convert("RGBA"))
+        return background
+    return image
+
+def to_RGB(image):
+    if image.mode != 'RGB':
+        return image.convert("RGB")
+    return image
+
+def is_corrupted_1x1(image):
+    width, height = image.size
+    if width ==1 or height ==1:
+        return True
+    return False
+
+def is_damaging(image):
+    width, height = image.size
+    if width <100 or height <100:
+        return True
+    if width >5000 or height >5000:
+        print(f'Found crazy image: {width}x{height}')
+        return True
+    return False
 
 class BufferedIterable(IterableDataset):
     """
@@ -204,13 +232,52 @@ class DirectoryRandomDataset(IterableDataset):
         raise RuntimeError("Image not present, some problem occur")
     
     def __random_couple__(self, i:int):
-        pr = self.dir / f"image-real-{i:08d}.{self.ext}"
-        pf = self.dir / f"image-fake-{i:08d}.{self.ext}"
-        if pf.exists() and pr.exists():
-            imagef = Image.open(pf).convert("RGB")
-            imager = Image.open(pr).convert("RGB")
-            return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
-        raise RuntimeError("Image not present, some problem occur")
+        '''
+        This behaviour extracts a random couple of semantically corresponding real and fake images.
+
+        Returns:
+            tuple[torch.Tensor, torch.Tensor] : a tuple with two tensors; the real image first, then the fake one
+
+        '''
+        while(True):
+            if i<0:
+                    raise RuntimeError('Negative i (????????????????????????)')
+            
+            pr = self.dir / f"image-real-{i:08d}.{self.ext}"
+            pf = self.dir / f"image-fake-{i:08d}.{self.ext}"
+            try:
+                #opening the two images
+                imager = Image.open(pr)
+                imagef = Image.open(pf)
+
+                #removing transparency
+                imager = remove_transparency(imager)
+                imagef = remove_transparency(imagef)
+
+                #converting back to RGB 
+                imager = to_RGB(imager)
+                imagef = to_RGB(imagef)
+
+                if is_corrupted_1x1(imager) or is_corrupted_1x1(imagef):
+                    i-=1
+                    #print('A 1x1 image was found')
+                    continue
+                if is_damaging(imager) or is_damaging(imagef):
+                    i-=1
+                    #print('A damaging image was found')
+                    continue
+            except:
+                i-=1
+                #print('A corrupted image was found')
+                continue
+
+            try:
+                return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
+            except:
+                i-=1
+                #print('A corrupted image was found')
+                continue
+            
     
     def __random_image__(self, i:int):
         #this part has experimental edits. porting into the other modes will possibly come into the future
@@ -233,19 +300,13 @@ class DirectoryRandomDataset(IterableDataset):
                 try:
                     image = Image.open(p)
                     #checking if the image has transparency
-                    if image.mode == 'P':
-                        #create a new image with a black background
-                        background = Image.new("RGB", image.size, (0, 0, 0))  # Black background
-                        #paste the original image onto the background
-                        background.paste(image.convert("RGBA"), (0, 0), image.convert("RGBA"))  # Use alpha channel as mask
-                        image = background  # Now the image is in RGB format
+                    image = remove_transparency(image)
 
-                    #convert to RGB if it's not already in that mode
-                    if image.mode != 'RGB':
-                        image = image.convert("RGB")
+                    #converting to RGB if it's not already in that mode
+                    image = to_RGB(image)
 
-                    width, height = image.size
-                    if width ==1 or height ==1:
+                    #checking for corrupted images
+                    if is_corrupted_1x1(image):
                         '''shutil.copy(emergency_p, p)
                         shutil.copy(counterpart_emergency_p, counterpart_p)'''
                         i-=1

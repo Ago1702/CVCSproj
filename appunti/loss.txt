@@ -2,3 +2,9 @@ La questione loss è difficile. Il paper dei prof di riferimento applica una los
 E' attratto verso un elemento della stessa classe, E allontanato da tutti gli elementi dell'altra
 classe presenti nel batch
 Si potrebbe provare a includere, nella contrastive loss, l'immagine sorella, dandole più peso del normale
+
+Primo approccio:
+    Fare avvicinare un elemento a tutti gli elementi della sua stessa classe, e farli allontanare da quelli della classe opposta.
+    Viene incluso il parametro couple_boost (float) che è un fattore moltiplicativo che aggiunge importanza nella loss all'immagine opposta (ma con stesso indice). Di default è disattivato (cioè =1.0), valutare se può avere senso 
+    metterlo maggiore di 1.
+    Viene applicata una l2 normalizzazione
