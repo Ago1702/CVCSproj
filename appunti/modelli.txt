@@ -1,0 +1,15 @@
+Diversi modelli sono stati provati. Una classica rete convolutiva non riesce a convergere. Si  è quindi optato per un approccio in 
+cui viene utilizzata una resnet50 pretraina su imagenet 1k. 
+
+versione 1: {resnet senza avgpooling e dense} e {cbam spaziale} dopo --> non il massimo, non sfrutta a pieno l'attenzione spaziale 
+con kernel diversi
+
+versione 2: sfruttare il fatto che la resnet da sola riesca a convergere, e aiutarla con il modulo cbam spaziale all'inizio e quello
+sui canali alla fine. dalla resnet è stato tolto solo il dense alla fine. alla fine della cbam, un dense layer porta la dimensionalità 
+da 2048 a 512
+
+NOTE SUL TRAINING: 
+per giungere a convergenza, ho notato che il modo più efficace è partire from scratch (gli embedding di classificazione sono deleteri)
+e iniziare ad aggiornare ogni 10 batch da 50 immagini. Questo è un compromesso fra la stabilità del gradiente e fare 
+convergere il modello in tempi umani. Verso la fine, quando la discesa deve essere più lenta, può avere senso accumulare il gradiente
+per migliaia di batch alla volta

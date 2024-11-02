@@ -38,9 +38,9 @@ class ChannelAttention(nn.Module):
         self.gate_channels = channels
         self.mlp = nn.Sequential(
             Flatten(),
-            nn.Linear(channels, channels // r),
+            nn.Linear(channels, max(channels // r,1)),
             nn.ReLU(),
-            nn.Linear(channels // r, channels)
+            nn.Linear(max(channels // r,1), channels)
         )
         self.pool_types = pool_types
         for module in self.mlp.children():
@@ -119,18 +119,18 @@ class CBAM(nn.Module):
 # L'idea è, di base, quella della GoogleNet 2014
 #  
 
-class MultiCBAM(nn.Module):
+class SpatialMultiCBAM(nn.Module):
     def __init__(self, channel:int, r:float | int | list[int|float] = 16):
-        super(MultiCBAM, self).__init__()
+        super(SpatialMultiCBAM, self).__init__()
         if isinstance(r, list):
-            self.bam_small = CBAM(channel, 3, r[0])
-            self.bam_medium = CBAM(channel, 7, r[1])
-            self.bam_large = CBAM(channel, 15, r[2])
+            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r[0])
+            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r[1])
+            self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r[2])
         else:
-            self.bam_small = CBAM(channel, 3, r)
-            self.bam_medium = CBAM(channel, 7, r)
-            self.bam_large = CBAM(channel, 15, r)
-        self.conv1 = nn.Conv2d(channel * 3, channel, 1)
+            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r)
+            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r)
+            self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r)
+        self.conv1 = nn.Conv2d(in_channels=channel * 3, out_channels=channel, kernel_size=1)
     
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         x_small = self.bam_small(x)
@@ -139,4 +139,31 @@ class MultiCBAM(nn.Module):
         x_final = torch.concat([x_small, x_medium, x_large], 1)
         x_final = self.conv1(x_final)
         return x + x_final
+    
+class ChannelMultiCBAM(nn.Module):
+    def __init__(self, channel:int, r:float | int | list[int|float] = 16):
+        super(ChannelMultiCBAM, self).__init__()
+        if isinstance(r, list):
+            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r[0],no_spatial=True)
+            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r[1],no_spatial=True)
+            self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r[2],no_spatial=True)
+        else:
+            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r,no_spatial=True)
+            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r,no_spatial=True)
+            self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r,no_spatial=True)
+        self.conv1 = nn.Conv2d(in_channels=channel * 3, out_channels=channel, kernel_size=1)
+    
+    def forward(self, x:torch.Tensor) -> torch.Tensor:
+        x_small = self.bam_small(x)
+        x_medium = self.bam_medium(x)
+        x_large = self.bam_large(x)
+        x_final = torch.concat([x_small, x_medium, x_large], 1)
+        x_final = self.conv1(x_final)
+        return x + x_final
+    
+
+if __name__ == '__main__':
+    test = ChannelAttention(3)
+    tensor = torch.zeros(1,3,200,200)
+    print(test(tensor).shape)
         
