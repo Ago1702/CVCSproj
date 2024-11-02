@@ -14,7 +14,7 @@ from models import loss
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
-import resnet_cbam
+from models import resnet_cbam
 from torch.amp import autocast, GradScaler
 from utils import notifier
 
