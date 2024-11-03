@@ -29,7 +29,7 @@ if __name__ == "__main__":
         raise RuntimeError("Se non c'è cuda, lo prendi in cu..da")
     
     #set this to false to debug
-    torch.backends.cudnn.enabled=False
+    #torch.backends.cudnn.enabled=False
     
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
     dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, dataset, batch_size=50,dataset_mode=DirectoryRandomDataset.COUP,num_workers=4,pacman=False)

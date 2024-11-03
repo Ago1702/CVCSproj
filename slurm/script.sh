@@ -19,4 +19,4 @@ cd ~/CVCSproj/slurm
 
 export PYTHONPATH=~/CVCSproj:$PYTHONPATH
 source ~/CVCSproj/.venv/bin/activate
-python3  ~/CVCSproj/models/resnet_contrastive.py
+python3  ~/CVCSproj/train/resnet_contrastive.py
