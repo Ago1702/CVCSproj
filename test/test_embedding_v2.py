@@ -25,15 +25,15 @@ if __name__ == "__main__":
     #set this to false to debug
     torch.backends.cudnn.enabled=False
 
-    dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/test')
+    dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
     dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, dataset, batch_size=50,dataset_mode=DirectoryRandomDataset.COUP,num_workers=4,pacman=False)
 
     res_net = nn.DataParallel(resnet_cbam.v2().cuda())
-    res_net.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_70000.pth', weights_only=True))
+    res_net.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_114000.pth', weights_only=True))
 
     all_embeddings = []
     all_labels = []
-
+    
     for n, (images, labels) in enumerate(dataloader):
         print(n)
         if n == 100:
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     plt.xlabel("t-SNE Component 1")
     plt.ylabel("t-SNE Component 2")
     plt.legend(title='Classes')
-    plt.savefig(os.path.expanduser('~/CVCSproj/outputs/embedding_2.png'))
+    plt.savefig(os.path.expanduser('~/CVCSproj/outputs/embedding_4.png'))
     plt.close()
     all_embeddings.clear()
     all_labels.clear()

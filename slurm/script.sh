@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=VisionWise                           # Job name
-#SBATCH --output=outputs/output.txt                     # Output file
-#SBATCH --error=outputs/error.txt                       # Error file
-#SBATCH --time=24:00:00                                 # Time limit (HH:MM:SS)
+#SBATCH --job-name=VisionWise                           
+#SBATCH --output=outputs/output.txt                    
+#SBATCH --error=outputs/error.txt                      
+#SBATCH --time=24:00:00                                 
 #SBATCH --partition=all_usr_prod                        # all_serial all_usr_prod boost_usr_prod
-#SBATCH --gres=gpu:2                                    # Request one GPU
-#SBATCH --account=cvcs2024                              # Account name
-#SBATCH --mem=20G                                       # Request 20 GB of RAM
+#SBATCH --gres=gpu:1                                   
+#SBATCH --account=cvcs2024                             
+#SBATCH --mem=30G                                       
 #SBATCH --cpus-per-task=8
 
 # Run the Python script

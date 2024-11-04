@@ -3,6 +3,7 @@ import os
 from PIL import Image
 from torch.utils.data import DataLoader
 from data.iter_dataset import DirectoryRandomDataset
+from data.iter_dataset import DirectorySequentialDataset
 from utils.transform import RandomTransform
 from torchvision.utils import save_image
 import gc
@@ -62,6 +63,7 @@ class TransformDataLoader(DataLoader):
         self.cropping_mode = cropping_mode
         self.num_channels = num_channels
         self.dataset_mode = dataset_mode
+
 
     def custom_collate(self,batch):
         '''

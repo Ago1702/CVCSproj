@@ -387,9 +387,45 @@ class DirectorySequentialDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
-        if index >= self.len or index < 0:
-            raise IndexError()
-        return self.tensorizzatore(Image.open(self.dir / f"image-{self.label[index % 2]}-{index//2:08d}.{self.ext}").convert("RGB")), torch.tensor(index % 2, dtype=torch.long)
+        while(True):
+            if index<0:
+                    raise RuntimeError('Negative index (????????????????????????)')
+            
+            pr = self.dir / f"image-real-{index:08d}.{self.ext}"
+            pf = self.dir / f"image-fake-{index:08d}.{self.ext}"
+            try:
+                #opening the two images
+                imager = Image.open(pr)
+                imagef = Image.open(pf)
+
+                #removing transparency
+                imager = remove_transparency(imager)
+                imagef = remove_transparency(imagef)
+
+                #converting back to RGB 
+                imager = to_RGB(imager)
+                imagef = to_RGB(imagef)
+
+                if is_corrupted_1x1(imager) or is_corrupted_1x1(imagef):
+                    index+=1
+                    #print('A 1x1 image was found')
+                    continue
+                if is_damaging(imager) or is_damaging(imagef):
+                    index+=1
+                    #print('A damaging image was found')
+                    continue
+            except:
+                index+=1
+                #print('A corrupted image was found')
+                continue
+
+            try:
+                return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
+            except:
+                index+=1
+                #print('A corrupted image was found')
+                continue
+        
 
 """
 TODO
