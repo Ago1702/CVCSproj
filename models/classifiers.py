@@ -40,6 +40,7 @@ class TransformerClassifier(nn.Module):
             device (str): Device for computation ('cuda' or 'cpu').
             log_interval (int): Number of iterations after which to log the loss.
         '''
+        os.makedirs("weights", exist_ok=True)
         self.to(device)
         criterion = nn.BCELoss()
         optimizer = optim.Adam(self.parameters(), lr=learning_rate)
@@ -62,13 +63,12 @@ class TransformerClassifier(nn.Module):
                 loss.backward()
                 optimizer.step()
 
-                # Print loss every log_interval batches default =500
+                # Print loss and save weights every log_interval batches (default=500)
                 if (batch_idx + 1) % log_interval == 0:
                     print(f"Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
-
+                    torch.save(self.state_dict(), f"weights/ViT_iteration_{batch_idx+1}.pth")
 
         print("Training completed.")
-
 
 class MLPClassifier(nn.Module):
     '''
@@ -148,10 +148,9 @@ class MLPClassifier(nn.Module):
                 loss.backward()
                 optimizer.step()
 
-                # Print loss every log_interval batches, defaults set to 500
+                # Print loss and save weights every log_interval batches (default=500)
                 if (batch_idx + 1) % log_interval == 0:
                     print(f"Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
-
+                    torch.save(self.state_dict(), f"weights/MLP_iteration_{batch_idx+1}.pth")
 
         print("Training completed.")
-

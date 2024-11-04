@@ -60,19 +60,21 @@ if __name__ == "__main__":
     #torch.backends.cudnn.enabled=False
     
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
-    dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, dataset, batch_size=50,dataset_mode=DirectoryRandomDataset.COUP,num_workers=4,pacman=False)
+    dataloader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP, dataset=dataset, batch_size=50,
+                                     dataset_mode=DirectoryRandomDataset.COUP, num_workers=4, pacman=False)
     
     res_net = nn.DataParallel(resnet_cbam.v2().cuda())
     running_loss = 0.0
 
     criterion = loss.ContrastiveLoss_V1(couple_boost=1.0)
-    optimizer = optim.Adam(res_net.parameters(), lr = 0.0001)
+    optimizer = optim.Adam(res_net.parameters(), lr=0.0001)
 
     optimizer.zero_grad()
 
     if path.exists('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_114000.pth'):
         print("Loaded weights from file", flush=True)
-        res_net.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_114000.pth', weights_only=True))
+        res_net.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_114000.pth',
+                                           weights_only=True))
         
     
 
