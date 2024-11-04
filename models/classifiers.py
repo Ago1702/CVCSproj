@@ -40,40 +40,32 @@ class TransformerClassifier(nn.Module):
             device (str): Device for computation ('cuda' or 'cpu').
             log_interval (int): Number of iterations after which to log the loss.
         '''
-        # Move model to specified device
         self.to(device)
         criterion = nn.BCELoss()
         optimizer = optim.Adam(self.parameters(), lr=learning_rate)
 
         # Training loop
         for epoch in range(num_epochs):
-            self.train()  # Set the model to training mode
+            self.train()
             total_loss = 0
 
             for batch_idx, (images, labels) in enumerate(train_loader):
                 images, labels = images.to(device), labels.to(device).float()
 
-                # Reset gradients
                 optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self(images).squeeze()  # Match BCELoss input
+                outputs = self(images).squeeze()
 
-                # Loss computation
                 loss = criterion(outputs, labels)
                 total_loss += loss.item()
 
-                # Backward pass and optimization
                 loss.backward()
                 optimizer.step()
 
-                # Print loss every log_interval batches
+                # Print loss every log_interval batches default =500
                 if (batch_idx + 1) % log_interval == 0:
                     print(f"Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
 
-            # Average loss for the epoch
-            avg_loss = total_loss / len(train_loader)
-            print(f"Epoch {epoch+1}/{num_epochs} completed, Average Loss: {avg_loss:.4f}")
 
         print("Training completed.")
 
@@ -98,6 +90,8 @@ class MLPClassifier(nn.Module):
         # Define the MLP layers
         layers = []
         in_features = input_size
+        # to increase or decrease the number of hidden layers you need to go to the declaration and change the
+        # hidden_dims param or call with a list
         for hidden_dim in hidden_dims:
             layers.append(nn.Linear(in_features, hidden_dim))
             layers.append(nn.ReLU())
@@ -132,12 +126,11 @@ class MLPClassifier(nn.Module):
             device (str): Device for computation ('cuda' or 'cpu').
             log_interval (int): Number of iterations after which to log the loss.
         '''
-        # Move model to specified device
+
         self.to(device)
-        criterion = nn.CrossEntropyLoss()  # Cross-entropy for binary classification with 2 output neurons
+        criterion = nn.CrossEntropyLoss()
         optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
 
-        # Training loop
         for epoch in range(num_epochs):
             self.train()  # Set model to training mode
             total_loss = 0
@@ -145,27 +138,20 @@ class MLPClassifier(nn.Module):
             for batch_idx, (images, labels) in enumerate(train_loader):
                 images, labels = images.to(device), labels.to(device).long()
 
-                # Reset gradients
                 optimizer.zero_grad()
 
-                # Forward pass
-                outputs = self(images)  # No need to squeeze with CrossEntropyLoss
+                outputs = self(images)
 
-                # Compute loss
                 loss = criterion(outputs, labels)
                 total_loss += loss.item()
 
-                # Backward pass and optimization
                 loss.backward()
                 optimizer.step()
 
-                # Print loss every log_interval batches
+                # Print loss every log_interval batches, defaults set to 500
                 if (batch_idx + 1) % log_interval == 0:
                     print(f"Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
 
-            # Average loss for the epoch
-            avg_loss = total_loss / len(train_loader)
-            print(f"Epoch {epoch+1}/{num_epochs} completed, Average Loss: {avg_loss:.4f}")
 
         print("Training completed.")
 
