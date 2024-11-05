@@ -47,20 +47,13 @@ if __name__ == '__main__':
                                      dataset_mode=DirectoryRandomDataset.COUP, num_workers=4, pacman=False)
     
     print('Let\'s train!!!!')
-    dataloader = TransformDataLoader(
-        RandomTransform.GLOBAL_CROP,
-        dataset,
-        batch_size=50,
-        dataset_mode=DirectoryRandomDataset.COUP,
-        num_workers=4,
-        pacman=False
-    )
-
+    # metto in modalità eval l'embedder
     embedder.eval()
 
     embedding_list = []
     label_list = []
 
+    # ottengo gli embedding per trainare il transformer
     with torch.no_grad():
         for images, labels in dataloader:
             embeddings = embedder(images)
@@ -70,7 +63,7 @@ if __name__ == '__main__':
     all_embeddings = torch.cat(embedding_list)
     all_labels = torch.cat(label_list)
 
-
+    # concateno embedding e label
     embedding_dataset = TensorDataset(all_embeddings, all_labels)
 
     classifier_dataloader = TransformDataLoader(
@@ -81,7 +74,7 @@ if __name__ == '__main__':
         num_workers=4,
         pacman=False
     )
-
+    # chaimo la funzione di train dlela classe TransformerClassifier
     classifier.train_model(train_loader=classifier_dataloader, num_epochs=2)
 
 
