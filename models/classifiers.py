@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn, optim
 from torch.utils.data import DataLoader
-
 class TransformerClassifier(nn.Module):
     '''
     A classifier that distinguishes between real and fake images using a ViT-like transformer.
@@ -29,7 +28,8 @@ class TransformerClassifier(nn.Module):
         x = self.fc(x)
         return x
 
-    def train_model(self, train_loader: DataLoader, num_epochs: int, learning_rate: float = 1e-4, device: str = 'cuda', log_interval: int = 500):
+    def train_model(self, train_loader: DataLoader, num_epochs: int, learning_rate: float = 1e-4, device: str = 'cuda',
+                    log_interval: int = 500):
         '''
         Train the TransformerClassifier with the provided data.
 
@@ -40,7 +40,6 @@ class TransformerClassifier(nn.Module):
             device (str): Device for computation ('cuda' or 'cpu').
             log_interval (int): Number of iterations after which to log the loss.
         '''
-        os.makedirs("weights", exist_ok=True)
         self.to(device)
         criterion = nn.BCELoss()
         optimizer = optim.Adam(self.parameters(), lr=learning_rate)
@@ -50,12 +49,12 @@ class TransformerClassifier(nn.Module):
             self.train()
             total_loss = 0
 
-            for batch_idx, (images, labels) in enumerate(train_loader):
-                images, labels = images.to(device), labels.to(device).float()
+            for batch_idx, (embeddings, labels) in enumerate(train_loader):
+                embeddings, labels = embeddings.to(device), labels.to(device).float()
 
                 optimizer.zero_grad()
 
-                outputs = self(images).squeeze()
+                outputs = self(embeddings).squeeze()
 
                 loss = criterion(outputs, labels)
                 total_loss += loss.item()

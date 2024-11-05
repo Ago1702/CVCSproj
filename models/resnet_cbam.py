@@ -33,7 +33,7 @@ class v1(nn.Module):
 
 class v2(nn.Module):
     def __init__(self):
-        super(v2,self).__init__()
+        super(v2, self).__init__()
         self.spatial_cbam = nn.Sequential(
             SpatialMultiCBAM(3, 8),
             SpatialMultiCBAM(3, 16),
@@ -63,4 +63,4 @@ class v2(nn.Module):
     
 if __name__ == '__main__':
     sandwich_net = v2()
-    print(sandwich_net(torch.zeros(10,3,200,200)).shape)
+    print(sandwich_net(torch.zeros(10, 3, 200, 200)).shape)
