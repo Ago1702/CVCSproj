@@ -2,8 +2,8 @@ import torch
 import os
 from PIL import Image
 from torch.utils.data import DataLoader
-from data.iter_dataset import DirectoryRandomDataset
-from data.iter_dataset import DirectorySequentialDataset
+from data.datasets import DirectoryRandomDataset
+from data.datasets import DirectorySequentialDataset
 from utils.transform import RandomTransform
 from torchvision.utils import save_image
 import gc

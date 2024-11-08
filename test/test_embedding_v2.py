@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch import nn as nn
 from torchvision import models
 from torchvision.transforms import v2
-from data.iter_dataset import DirectoryRandomDataset
+from data.datasets import DirectoryRandomDataset
 from utils.transform import RandomTransform
 from data.dataloader import TransformDataLoader
 from models import loss
@@ -25,18 +25,18 @@ if __name__ == "__main__":
     #set this to false to debug
     torch.backends.cudnn.enabled=False
 
-    dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
+    dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/test')
     dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, dataset, batch_size=50,dataset_mode=DirectoryRandomDataset.COUP,num_workers=4,pacman=False)
 
     res_net = nn.DataParallel(resnet_cbam.v2().cuda())
-    res_net.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_114000.pth', weights_only=True))
+    res_net.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_164000.pth', weights_only=True))
 
     all_embeddings = []
     all_labels = []
     
     for n, (images, labels) in enumerate(dataloader):
         print(n)
-        if n == 100:
+        if n == 300:
             break
 
         out = res_net(images)
@@ -54,11 +54,11 @@ if __name__ == "__main__":
     # Step 3: Plotting
     plt.figure(figsize=(10, 8))
     sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=all_labels_np, palette='viridis', s=100)
-    plt.title(f"risultati")
+    plt.title(f"risultati iter 164000")
     plt.xlabel("t-SNE Component 1")
     plt.ylabel("t-SNE Component 2")
     plt.legend(title='Classes')
-    plt.savefig(os.path.expanduser('~/CVCSproj/outputs/embedding_4.png'))
+    plt.savefig(os.path.expanduser('~/CVCSproj/outputs/embedding_164000.png'))
     plt.close()
     all_embeddings.clear()
     all_labels.clear()

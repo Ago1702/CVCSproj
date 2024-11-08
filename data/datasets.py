@@ -338,7 +338,7 @@ class DirectoryRandomDataset(IterableDataset):
         REAL: return a random real image and label
         FAKE: return a random fake image and label
         COUP: return two semantic correlated images the first is real, the latter is fake
-
+        
         Args:
             mode (int): _description_
         """
@@ -352,6 +352,10 @@ class DirectoryRandomDataset(IterableDataset):
             self.behaviour = self.__random_couple__
 
 class DirectorySequentialDataset(Dataset):
+    '''
+    Usage: this class is super duper perfect, but do not use it directly. Pass it to a torch.utils.data.Dataloader.
+    Use case: use it for the test dataset only. Sequentiality is not good for learning.
+    '''
     def __init__(self, dir: Union[str, Path], ext:str = "png"):
         super().__init__()
         if not isinstance(dir, Path):
@@ -420,7 +424,7 @@ class DirectorySequentialDataset(Dataset):
                 continue
 
             try:
-                return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
+                return self.tensorizzatore(imager).type(torch.float32), self.tensorizzatore(imagef).type(torch.float32)
             except:
                 index+=1
                 #print('A corrupted image was found')

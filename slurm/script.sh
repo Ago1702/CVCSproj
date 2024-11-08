@@ -6,7 +6,7 @@
 #SBATCH --partition=all_usr_prod                        # all_serial all_usr_prod boost_usr_prod
 #SBATCH --gres=gpu:1                                   
 #SBATCH --account=cvcs2024                             
-#SBATCH --mem=30G                                       
+#SBATCH --mem=40G                                       
 #SBATCH --cpus-per-task=8
 
 # Run the Python script
