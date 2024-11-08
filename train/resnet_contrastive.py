@@ -62,7 +62,8 @@ if __name__ == "__main__":
     #torch.backends.cudnn.enabled=False
     
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
-    dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, dataset, batch_size=50,dataset_mode=DirectoryRandomDataset.COUP,num_workers=4,pacman=False)
+    dataloader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP, dataset=dataset, batch_size=50,
+                                     dataset_mode=DirectoryRandomDataset.COUP, num_workers=4, pacman=False)
     
     res_net = nn.DataParallel(resnet_cbam.v2().cuda())
     running_loss = 0.0

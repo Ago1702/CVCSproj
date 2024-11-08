@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn, optim
 from torch.utils.data import DataLoader
-
 class TransformerClassifier(nn.Module):
     '''
     A classifier that distinguishes between real and fake images using a ViT-like transformer.
@@ -29,7 +28,8 @@ class TransformerClassifier(nn.Module):
         x = self.fc(x)
         return x
 
-    def train_model(self, train_loader: DataLoader, num_epochs: int, learning_rate: float = 1e-4, device: str = 'cuda', log_interval: int = 500):
+    def train_model(self, train_loader: DataLoader, num_epochs: int, learning_rate: float = 1e-4, device: str = 'cuda',
+                    log_interval: int = 500):
         '''
         Train the TransformerClassifier with the provided data.
 
@@ -49,12 +49,12 @@ class TransformerClassifier(nn.Module):
             self.train()
             total_loss = 0
 
-            for batch_idx, (images, labels) in enumerate(train_loader):
-                images, labels = images.to(device), labels.to(device).float()
+            for batch_idx, (embeddings, labels) in enumerate(train_loader):
+                embeddings, labels = embeddings.to(device), labels.to(device).float()
 
                 optimizer.zero_grad()
 
-                outputs = self(images).squeeze()
+                outputs = self(embeddings).squeeze()
 
                 loss = criterion(outputs, labels)
                 total_loss += loss.item()
@@ -62,13 +62,12 @@ class TransformerClassifier(nn.Module):
                 loss.backward()
                 optimizer.step()
 
-                # Print loss every log_interval batches default =500
+                # Print loss and save weights every log_interval batches (default=500)
                 if (batch_idx + 1) % log_interval == 0:
                     print(f"Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
-
+                    torch.save(self.state_dict(), f"weights/ViT_iteration_{batch_idx+1}.pth")
 
         print("Training completed.")
-
 
 class MLPClassifier(nn.Module):
     '''
@@ -148,10 +147,9 @@ class MLPClassifier(nn.Module):
                 loss.backward()
                 optimizer.step()
 
-                # Print loss every log_interval batches, defaults set to 500
+                # Print loss and save weights every log_interval batches (default=500)
                 if (batch_idx + 1) % log_interval == 0:
                     print(f"Epoch [{epoch+1}/{num_epochs}], Step [{batch_idx+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
-
+                    torch.save(self.state_dict(), f"weights/MLP_iteration_{batch_idx+1}.pth")
 
         print("Training completed.")
-
