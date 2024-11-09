@@ -6,7 +6,7 @@ import torch.optim as optim
 from torch import nn as nn
 from torchvision import models
 from torchvision.transforms import v2
-from data.iter_dataset import DirectoryRandomDataset
+from data.datasets import DirectoryRandomDataset
 from utils.transform import RandomTransform
 from data.dataloader import TransformDataLoader
 from models import loss
