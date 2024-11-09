@@ -3,7 +3,7 @@ import torch
 import torchvision
 import numpy as np
 from torchvision.transforms import v2
-from data.iter_dataset import DirectoryRandomDataset
+from data.datasets import DirectoryRandomDataset
 
 class WaveletTransform(v2.Transform):
     def __init__(self, wavelet:str = 'haar'):
