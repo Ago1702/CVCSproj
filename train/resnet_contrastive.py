@@ -25,16 +25,17 @@ def get_validation_loss(weights_file):
         raise RuntimeError("Se non c'è cuda, lo prendi in cu..da!")
     
     #set this to false to debug
-    torch.backends.cudnn.enabled=False
+    #torch.backends.cudnn.enabled=False
+    torch.backends.cudnn.benchmark = True
 
     test_dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/test')
-    test_dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, test_dataset, batch_size=50,dataset_mode=DirectoryRandomDataset.BASE,num_workers=8,pacman=False)
+    test_dataloader = TransformDataLoader(RandomTransform.GLOBAL_CROP, test_dataset, batch_size=200,dataset_mode=DirectoryRandomDataset.BASE,num_workers=8,pacman=False)
 
     test_net = nn.DataParallel(resnet_cbam.v2().cuda())
     test_net.load_state_dict(torch.load(weights_file, weights_only=True))
     
     test_running_loss = 0.0
-    test_criterion = loss.ContrastiveLoss_V1(margin=0.5)
+    test_criterion = loss.ContrastiveLoss_V4()
     
     for n, (images, labels) in enumerate(test_dataloader):
         print(n)
@@ -59,23 +60,23 @@ if __name__ == "__main__":
         raise RuntimeError("Se non c'è cuda, lo prendi in cu..da")
     
     #set this to false to debug
-    #torch.backends.cudnn.enabled=False
+    torch.backends.cudnn.enabled=False
     
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')
     dataloader = TransformDataLoader(cropping_mode=RandomTransform.GLOBAL_CROP, dataset=dataset, batch_size=50,
                                      dataset_mode=DirectoryRandomDataset.COUP, num_workers=4, pacman=False)
     
-    res_net = nn.DataParallel(resnet_cbam.v2().cuda())
+    res_net = nn.DataParallel(resnet_cbam.v3().cuda())
     running_loss = 0.0
 
-    criterion = loss.ContrastiveLoss_V1(couple_boost=1.0)
-    optimizer = optim.Adam(res_net.parameters(), lr = 0.001)
+    criterion = loss.ContrastiveLoss_V4(margin=0.8)
+    optimizer = optim.Adam(res_net.parameters(), lr = 0.0001)
     scheduler = ExponentialLR(optimizer=optimizer,gamma=0.95)
 
     optimizer.zero_grad()
 
-    start_index = 164500
-    weights_file = f'/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_{start_index}.pth'
+    start_index = 0
+    weights_file = f'/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v5_{start_index}.pth'
 
     if path.exists(weights_file):
         print("Loaded weights from file", flush=True)
@@ -91,65 +92,64 @@ if __name__ == "__main__":
     print("Let's learn! (˶ᵔ ᵕ ᵔ˶)", flush=True)
     notifier.send_notification('step_disperazione',"Let's learn! (˶ᵔ ᵕ ᵔ˶)")
     #training parameters
-    n_iter = 1
     
     for n, (images, labels) in enumerate(dataloader,start=start_index):
 
-        for n_i in range(n_iter):
-
-            out = res_net(images)
-            iter_loss = criterion(out, labels.float())
-            running_loss +=iter_loss.item()
-
-            '''all_embeddings.append(out.detach().cpu())  # Move to CPU and detach from the graph
-            all_labels.append(labels.detach().cpu())'''
-
-            #clipping the gradients
-            #torch.nn.utils.clip_grad_norm_(res_net.parameters(), max_norm=1.0)
-
-            print(f"Iteration {n + 1} --> Loss is {iter_loss.item():.4f}", flush=True)
-            if (n + 1) % 50 == 0:
-                hard_batches = 0
-                optimizer.step()
-                optimizer.zero_grad()
-                #print(f"Iteration {n + 1} --> Loss is {loss.item():.4f}", flush=True)
-                #notifier.send_notification(topic='step_disperazione',data=f"Loss for {n+1} is {loss.item():.4f}")
-            
-            if (n+1) % 100 == 0:
-                scheduler.step()
-
-            if (n + 1) % 500 == 0: 
-                notifier.send_notification(topic='current_disperazione',data=f"Running loss at iter {n+1} is {(running_loss/500):.4f}, validation loss is {get_validation_loss(weights_file=weights_file)}")
-                running_loss = 0.0
-            '''for name, param in res_net.named_parameters():
-                if param.grad is not None:
-                    print(f"Gradient of {name}: {param.grad}")
-                else:
-                    print(f"Gradient of {name}: {param.grad}")'''
-
-            '''all_embeddings_np = torch.cat(all_embeddings, dim=0).numpy()
-            all_labels_np = torch.cat(all_labels, dim=0).flatten().numpy()
-
-            # Step 2: Dimensionality Reduction
-            tsne = TSNE(n_components=2, perplexity=10, random_state=42)
-            embeddings_2d = tsne.fit_transform(all_embeddings_np)
-
-            # Step 3: Plotting
-            plt.figure(figsize=(10, 8))
-            sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=all_labels_np, palette='viridis', s=100)
-            plt.title(f"Iteration {n + 1}.{n_i + 1}")
-            plt.xlabel("t-SNE Component 1")
-            plt.ylabel("t-SNE Component 2")
-            plt.legend(title='Classes')
-            plt.savefig(os.path.expanduser('~/CVCSproj/outputs/embedding.png'))
-            plt.close()
-            all_embeddings.clear()
-            all_labels.clear()
-            
-            #print_gpu_memory_usage()'''
-            torch.cuda.empty_cache()
-            if (n+1) % 500 == 0:
-                weights_file = f'/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_{n+1}.pth'
-                torch.save(res_net.state_dict(), weights_file)
-                
+        out = res_net(images)
+        iter_loss = criterion(out, labels.float())
+        iter_loss.backward()
         
+        running_loss +=iter_loss.item()
+
+        #clipping the gradients
+        #torch.nn.utils.clip_grad_norm_(res_net.parameters(), max_norm=1.0)
+
+        print(f"Iteration {n + 1} --> Loss is {iter_loss.item():.6f}", flush=True)
+        
+        if (n + 1) % 1 == 0:
+            optimizer.step()
+            optimizer.zero_grad()
+            #print(f"Iteration {n + 1} --> Loss is {loss.item():.4f}", flush=True)
+            #notifier.send_notification(topic='step_disperazione',data=f"Loss for {n+1} is {loss.item():.4f}")
+        
+        if (n+1) % 50 == 0:
+            scheduler.step()
+
+        if (n + 1) % 500 == 0: 
+            try:
+                notifier.send_notification(topic='current_disperazione',data=f"Running loss at iter {n+1} is {(running_loss/500):.6f}, validation loss is no-loss")
+            except:
+                pass
+            running_loss = 0.0
+        '''for name, param in res_net.named_parameters():
+            if param.grad is not None:
+                print(f"Gradient of {name}: {param.grad}")
+            else:
+                print(f"Gradient of {name}: {param.grad}")'''
+
+        '''all_embeddings_np = torch.cat(all_embeddings, dim=0).numpy()
+        all_labels_np = torch.cat(all_labels, dim=0).flatten().numpy()
+
+        # Step 2: Dimensionality Reduction
+        tsne = TSNE(n_components=2, perplexity=10, random_state=42)
+        embeddings_2d = tsne.fit_transform(all_embeddings_np)
+
+        # Step 3: Plotting
+        plt.figure(figsize=(10, 8))
+        sns.scatterplot(x=embeddings_2d[:, 0], y=embeddings_2d[:, 1], hue=all_labels_np, palette='viridis', s=100)
+        plt.title(f"Iteration {n + 1}.{n_i + 1}")
+        plt.xlabel("t-SNE Component 1")
+        plt.ylabel("t-SNE Component 2")
+        plt.legend(title='Classes')
+        plt.savefig(os.path.expanduser('~/CVCSproj/outputs/embedding.png'))
+        plt.close()
+        all_embeddings.clear()
+        all_labels.clear()
+        
+        #print_gpu_memory_usage()'''
+        torch.cuda.empty_cache()
+        if (n+1) % 50 == 0:
+            weights_file = f'/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v5_{n+1}.pth'
+            torch.save(res_net.state_dict(), weights_file)
+            
+    

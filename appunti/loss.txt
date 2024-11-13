@@ -8,3 +8,6 @@ Primo approccio:
     Viene incluso il parametro couple_boost (float) che è un fattore moltiplicativo che aggiunge importanza nella loss all'immagine opposta (ma con stesso indice). Di default è disattivato (cioè =1.0), valutare se può avere senso 
     metterlo maggiore di 1.
     Viene applicata una l2 normalizzazione
+
+QUESTA LOSS FA SCHIFO
+    ripiego su una più testata triplet loss

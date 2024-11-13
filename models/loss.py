@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms import v2
+import numpy as np
+
 def is_partner(i:int,j:int,labels: torch.tensor)->bool:
     '''
     Ultra specific helper funcion
@@ -102,3 +104,89 @@ class ContrastiveLoss_V2(nn.Module):
         # Total loss
         loss = positive_loss + 0.5 * negative_loss
         return loss
+    
+class ContrastiveLoss_V3(nn.Module):
+    def __init__(self,margin:float = 1.0):
+        super(ContrastiveLoss_V3,self).__init__()
+        self.margin = margin
+
+    def forward(self, embeddings:torch.Tensor,labels:torch.Tensor):
+        '''
+        Args: 
+            embeddings (torch.Tensor): a tensor with two dimensions: (n_samples,embedding_size)
+            labels (torch.Tensor): a tensor with two dimensions: (n_samples,1)
+        '''
+        #label == 0 --> real
+        #label == 1 --> fake
+        loss = 0.0
+        embeddings = F.normalize(embeddings,p=2,dim=1,eps=1e-6)
+        
+        n_of_comparisons = 0
+        for anchor in range(embeddings.size(0)):
+            positive = 0
+            negative = 0
+            while True:
+                positive=np.random.choice(range(embeddings.size(0)))
+                if anchor!=positive and labels[anchor]==labels[positive]:
+                    break
+            while True:
+                negative=np.random.choice(range(embeddings.size(0)))
+                if labels[anchor]!=labels[negative]:
+                    break
+            distance_pos = F.pairwise_distance(embeddings[anchor,:], embeddings[positive,:]) + 1e-6
+            distance_neg = F.pairwise_distance(embeddings[anchor,:], embeddings[negative,:]) + 1e-6
+            
+            positive_loss = torch.pow(distance_pos, 2)
+            negative_loss = torch.pow(torch.clamp(self.margin - distance_neg, min= 1e-6), 2)
+            
+            loss+=positive_loss
+            loss+=negative_loss
+            
+            n_of_comparisons += 2
+        
+        return loss/n_of_comparisons
+    
+
+class ContrastiveLoss_V4(nn.Module):
+    def __init__(self,margin:float = 1.0):
+        super(ContrastiveLoss_V4,self).__init__()
+        self.margin = margin
+
+    def forward(self, embeddings:torch.Tensor,labels:torch.Tensor):
+        '''
+        Args: 
+            embeddings (torch.Tensor): a tensor with two dimensions: (n_samples,embedding_size)
+            labels (torch.Tensor): a tensor with two dimensions: (n_samples,1)
+        '''
+        #label == 0 --> real
+        #label == 1 --> fake
+        loss = 0.0
+        embeddings = F.normalize(embeddings,p=2,dim=1,eps=1e-6)
+        
+        n_of_comparisons = 0
+        for anchor in range(embeddings.size(0)):
+            #loss with one randomly chosen positive sample
+            while True:
+                positive=np.random.choice(range(embeddings.size(0)))
+
+                if anchor!=positive and labels[anchor]==labels[positive]:
+                    distance_pos = F.pairwise_distance(embeddings[anchor,:], embeddings[positive,:])
+                    positive_loss = torch.pow(distance_pos, 2)
+                    loss+=positive_loss
+                    n_of_comparisons+=1
+                    break
+            
+            #loss for all negative samples
+            negative_comparisons = 0
+            indices = torch.randperm(embeddings.size(0))
+            for sample in indices:
+                if labels[anchor]!=labels[sample]:
+                    distance_neg = F.pairwise_distance(embeddings[anchor,:], embeddings[sample,:])
+                    negative_loss = torch.pow(torch.clamp(self.margin - distance_neg, min= 0), 2)
+                    loss+=negative_loss
+                    negative_comparisons+=1
+                if negative_comparisons > 100:
+                    break
+            n_of_comparisons+=negative_comparisons
+        
+        return loss/n_of_comparisons
