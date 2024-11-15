@@ -17,36 +17,48 @@ from sklearn.manifold import TSNE
 from models import resnet_cbam
 from torch.amp import autocast, GradScaler
 from utils import notifier
+from torch.utils.data import DataLoader
 
 if __name__ == "__main__":
-    iteration_index = 300
+    if len(sys.argv) < 2:
+        print("Please provide an integer as a command-line argument.")
+        sys.exit(1) 
+    try:
+        iteration_index = int(sys.argv[1])
+    except ValueError:
+        print("The provided argument is not a valid integer.")
+        sys.exit(1)  # Exit with an error code
+
     if not torch.cuda.is_available():
         raise RuntimeError("Se non c'è cuda, lo prendi in cu..da!")
     
     #uncomment this to false to debug
-    #torch.backends.cudnn.enabled=False
+    torch.backends.cudnn.enabled=False
 
     dataset = DirectorySequentialDataset('/work/cvcs2024/VisionWise/test')
-    transform = RandomTransform(p=1)
+    dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=8, pin_memory=True)
+
     
-    res_net = nn.DataParallel(resnet_cbam.v2().cuda())
-    res_net.load_state_dict(torch.load(f'/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v4_{iteration_index}.pth', weights_only=True))
+    res_net = nn.DataParallel(resnet_cbam.v4().cuda())
+    
+    res_net.load_state_dict(torch.load(f'/work/cvcs2024/VisionWise/weights/checkpoint_v4_r1_{iteration_index}.pth')['model'])
     res_net.eval()
+
     all_embeddings = []
     all_labels = []
     
     print('Dataset Iteration')
-    for n, (imager, imagef) in enumerate(dataset):
-        if n == 4000:
+    for n, (imager, imagef) in enumerate(dataloader):
+        if n == 4250:
             break
         
         if (n+1) % 50 == 0:
             print(n+1,flush=True)
-        
-        out_r = F.normalize(res_net(transform(imager.unsqueeze(0).cuda())),p=2)
-        out_f = F.normalize(res_net(transform(imagef.unsqueeze(0).cuda())),p=2)
-        all_embeddings.append(out_r.detach().cpu())  # Move to CPU and detach from the graph
-        all_embeddings.append(out_f.detach().cpu())  # Move to CPU and detach from the graph
+        with torch.no_grad():
+            out_r = F.normalize(res_net((imager.cuda()).squeeze(0)),p=2)
+            out_f = F.normalize(res_net((imagef.cuda()).squeeze(0)),p=2)
+        all_embeddings.append(out_r.detach().cpu())  
+        all_embeddings.append(out_f.detach().cpu())  
         all_labels.append(torch.tensor([0],dtype=torch.long))
         all_labels.append(torch.tensor([1],dtype=torch.long))
         
@@ -66,7 +78,7 @@ if __name__ == "__main__":
     plt.xlabel("t-SNE Component 1")
     plt.ylabel("t-SNE Component 2")
     plt.legend(title='Classes')
-    plt.savefig(os.path.expanduser(f'~/CVCSproj/outputs/embedding_{iteration_index}.png'))
+    plt.savefig(os.path.expanduser(f'~/CVCSproj/outputs/embedding_v4_r1_{iteration_index}.png'))
     plt.close()
     all_embeddings.clear()
     all_labels.clear()

@@ -50,22 +50,24 @@ class ContrastiveLoss_V1(nn.Module):
             for j in range(embeddings.size(0)):
                 if i <= j:
                     continue
-                distance = F.pairwise_distance(embeddings[i], embeddings[j]) + 1e-6
+                distance = F.pairwise_distance(embeddings[i], embeddings[j])
                 if labels[i] == labels[j]:
-                    positive_loss = torch.pow(distance, 2)
+                    positive_loss = 0.5 * torch.pow(distance, 2)
                     if torch.isnan(positive_loss):
                         print(f"NaN detected in positive loss for samples {i} and {j}")
                         print(embeddings[i])
                         print(embeddings[j])
                     loss +=positive_loss
                     n_of_comparisons += 1
+                    print('pos_loss')
                 else:
                     p_couple_boost: float = 1.0
                     if is_partner(i,j,labels=labels):
-                        p_couple_boost= self.couple_boost #this is not 1 only when they are "partners" (simple strategy to keep code simplier)
-                    negative_loss = 0.5 * p_couple_boost*torch.pow(torch.clamp(self.margin - distance, min= 1e-6), 2)
+                        p_couple_boost= self.couple_boost #this is not == 1 only when they are "partners" (simple strategy to keep code simplier)
+                    negative_loss = 0.5 * p_couple_boost*torch.pow(torch.clamp(self.margin - distance, min= 0), 2)
                     if torch.isnan(negative_loss):
                         print(f"NaN detected in negative loss for samples {i} and {j}")
+                    print('neg_loss')
                     loss += negative_loss
                     n_of_comparisons += 1
         return loss/n_of_comparisons
@@ -185,7 +187,7 @@ class ContrastiveLoss_V4(nn.Module):
                     negative_loss = torch.pow(torch.clamp(self.margin - distance_neg, min= 0), 2)
                     loss+=negative_loss
                     negative_comparisons+=1
-                if negative_comparisons > 100:
+                if negative_comparisons > 20:
                     break
             n_of_comparisons+=negative_comparisons
         

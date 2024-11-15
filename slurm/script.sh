@@ -4,9 +4,9 @@
 #SBATCH --error=outputs/error.txt                      
 #SBATCH --time=24:00:00                                 
 #SBATCH --partition=all_usr_prod                        # all_serial all_usr_prod boost_usr_prod
-#SBATCH --gres=gpu:1                                   
+#SBATCH --gres=gpu:4                                   
 #SBATCH --account=cvcs2024                             
-#SBATCH --mem=50G                                       
+#SBATCH --mem=60G                                       
 #SBATCH --cpus-per-task=8
 
 # Run the Python script

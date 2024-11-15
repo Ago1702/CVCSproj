@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torchvision import models
-from utils.modules import SpatialMultiCBAM,ChannelMultiCBAM
+from utils.modules import MultiCBAM,ChannelMultiCBAM
 
 def initialize_weights(module):
     if isinstance(module, nn.Conv2d):
@@ -27,9 +27,9 @@ class v1(nn.Module):
 
         self.resnet = nn.Sequential(*(list(resnet.children())[:-2]))
         self.cbam = nn.Sequential(
-            SpatialMultiCBAM(2048, 8),
-            SpatialMultiCBAM(2048, 16),
-            SpatialMultiCBAM(2048, 32)
+            MultiCBAM(2048, 8),
+            MultiCBAM(2048, 16),
+            MultiCBAM(2048, 32)
             )
         self.flatten = nn.Flatten()
 
@@ -45,9 +45,9 @@ class v2(nn.Module):
     def __init__(self):
         super(v2, self).__init__()
         self.spatial_cbam = nn.Sequential(
-            SpatialMultiCBAM(3, 8),
-            SpatialMultiCBAM(3, 16),
-            SpatialMultiCBAM(3, 32)
+            MultiCBAM(3, 8),
+            MultiCBAM(3, 16),
+            MultiCBAM(3, 32)
             )
         
         resnet =  models.resnet50()
@@ -75,9 +75,9 @@ class v3(nn.Module):
     def __init__(self):
         super(v3, self).__init__()
         self.spatial_cbam = nn.Sequential(
-            SpatialMultiCBAM(3, 8),
-            SpatialMultiCBAM(3, 16),
-            SpatialMultiCBAM(3, 32)
+            MultiCBAM(3, 8),
+            MultiCBAM(3, 16),
+            MultiCBAM(3, 32)
             )
         
         resnet =  models.resnet152(weights=models.ResNet152_Weights.IMAGENET1K_V2)
@@ -105,6 +105,28 @@ class v3(nn.Module):
         x = self.dense(x)
         return x
     
+class v4(nn.Module):
+    def __init__(self):
+        super(v4,self).__init__()
+        resnet = models.resnet101(weights=models.ResNet101_Weights.IMAGENET1K_V1)
+        self.resnet=nn.Sequential(*list(resnet.children())[:-2])
+        self.cbam = nn.Sequential(
+            MultiCBAM(2048, 8),
+            MultiCBAM(2048, 16),
+            MultiCBAM(2048, 32)
+            )
+        self.pool = nn.AvgPool2d(kernel_size=7)
+        self.flatten = nn.Flatten()
+        self.dense = nn.Linear(in_features=2048,out_features=512)
+        
+    def forward(self,x:torch.Tensor):
+        x = self.resnet(x)
+        x = self.cbam(x)
+        x = self.pool(x)
+        x= self.flatten(x)
+        x = self.dense(x)
+        return x
+    
 if __name__ == '__main__':
-    sandwich_net = v3()
+    sandwich_net = v4()
     print(sandwich_net(torch.zeros(10, 3, 200, 200)).shape)
