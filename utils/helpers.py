@@ -2,7 +2,18 @@ import torch
 import torch.nn as nn
 import os
 import re
+import numpy as np
+from PIL import Image
 
+def save_tensor_to_png(image_name:str,tensor:torch.Tensor,destination_dir:str = os.path.expanduser('~/CVCSproj/outputs/garbage')):
+    if not image_name.endswith('.png'):
+        image_name+='.png'
+    save_path = os.path.join(destination_dir,image_name)
+    
+    array = (tensor.cpu().numpy() * 255).astype(np.uint8)
+    image = Image.fromarray(array)
+    image.save(save_path)
+    
 def point_module_remover(state_dict):
     '''
     The weights for the model were saved when it was wrapped by a nn.DataParallel.
@@ -52,6 +63,9 @@ def load_checkpoint(checkpoint_name:str,optimizer,model:nn.Module,path:str = '/w
     list_of_all_files = os.listdir(path)
     list_of_candidate_files = [file for file in list_of_all_files if checkpoint_name in file]
     
+    if len(list_of_candidate_files) == 0:
+        return 0
+
     max_value = float('-inf')
     load_path = None
     

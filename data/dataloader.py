@@ -119,7 +119,7 @@ class TransformDataLoader(DataLoader):
         x_max = torch.max(x_batch_tensor)
         gc.collect()
         
-        x_batch_tensor = (x_batch_tensor - x_min) / (x_max - x_min)
+        #x_batch_tensor = (x_batch_tensor - x_min) / (x_max - x_min)
 
         return x_batch_tensor , y_batch_tensor
     

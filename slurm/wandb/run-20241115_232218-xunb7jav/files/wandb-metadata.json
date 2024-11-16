@@ -1,0 +1,104 @@
+{
+  "os": "Linux-5.15.0-117-generic-x86_64-with-glibc2.35",
+  "python": "3.10.12",
+  "startedAt": "2024-11-15T22:22:19.002159Z",
+  "program": "/homes/ocarpentiero/CVCSproj/train/train_resnet_v1.py",
+  "codePath": "train/train_resnet_v1.py",
+  "git": {
+    "remote": "git@github.com:Ago1702/CVCSproj.git",
+    "commit": "fd50600ce3fa9dc462ae86735573a3501cec9f57"
+  },
+  "email": "269868@studenti.unimore.it",
+  "root": "/homes/ocarpentiero/CVCSproj/slurm",
+  "host": "gervasoni",
+  "username": "ocarpentiero",
+  "executable": "/homes/ocarpentiero/CVCSproj/.venv/bin/python3",
+  "cpu_count": 32,
+  "cpu_count_logical": 64,
+  "gpu": "Quadro RTX 5000",
+  "gpu_count": 2,
+  "disk": {
+    "/": {
+      "total": "210241560576",
+      "used": "90429288448"
+    }
+  },
+  "memory": {
+    "total": "404320899072"
+  },
+  "cpu": {
+    "count": 32,
+    "countLogical": 64
+  },
+  "gpu_nvidia": [
+    {
+      "name": "Quadro RTX 5000",
+      "memoryTotal": "17179869184",
+      "cudaCores": 3072,
+      "architecture": "Turing"
+    },
+    {
+      "name": "Quadro RTX 5000",
+      "memoryTotal": "17179869184",
+      "cudaCores": 3072,
+      "architecture": "Turing"
+    }
+  ],
+  "slurm": {
+    "cluster_name": "aimagelab",
+    "conf": "/etc/slurm/slurm.conf",
+    "cpus_on_node": "8",
+    "cpus_per_task": "8",
+    "distribution": "block",
+    "gpus_on_node": "2",
+    "gtids": "0",
+    "job_account": "cvcs2024",
+    "job_cpus_per_node": "8",
+    "job_end_time": "1731795734",
+    "job_gid": "44378",
+    "job_gpus": "2,3",
+    "job_group": "studenti",
+    "job_id": "2485311",
+    "job_name": "VisionWise",
+    "job_nodelist": "gervasoni",
+    "job_num_nodes": "1",
+    "job_partition": "all_usr_prod",
+    "job_qos": "all_qos_sprod",
+    "job_start_time": "1731709334",
+    "job_uid": "92375",
+    "job_user": "ocarpentiero",
+    "jobid": "2485311",
+    "launch_node_ipaddr": "155.185.49.58",
+    "localid": "0",
+    "mem_per_node": "61440",
+    "nnodes": "1",
+    "nodeid": "0",
+    "nodelist": "gervasoni",
+    "nprocs": "1",
+    "ntasks": "1",
+    "prio_process": "0",
+    "procid": "0",
+    "pty_port": "35779",
+    "pty_win_col": "157",
+    "pty_win_row": "7",
+    "script_context": "prolog_task",
+    "srun_comm_host": "155.185.49.58",
+    "srun_comm_port": "34227",
+    "step_gpus": "8",
+    "step_id": "0",
+    "step_launcher_port": "34227",
+    "step_nodelist": "ailb-login-02",
+    "step_num_nodes": "1",
+    "step_num_tasks": "1",
+    "step_tasks_per_node": "1",
+    "stepid": "0",
+    "submit_dir": "/homes/ocarpentiero/CVCSproj",
+    "submit_host": "ailb-login-02",
+    "task_pid": "3316197",
+    "tasks_per_node": "1",
+    "topology_addr": "gervasoni",
+    "topology_addr_pattern": "node",
+    "tres_per_task": "cpu=8"
+  },
+  "cudaVersion": "12.2"
+}

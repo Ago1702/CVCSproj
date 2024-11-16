@@ -189,7 +189,7 @@ class DirectoryRandomDataset(IterableDataset):
         self.len = self.len // 2
         self.label = {0 : "real", 1 : "fake"}
         self.ext = ext
-        self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
+        self.tensorizzatore = transforms.Compose([transforms.ToTensor()])
         self.behaviour = self.__random_image__
         self.max_iter = max_iter
         self.iter = 0
@@ -365,9 +365,9 @@ class DirectorySequentialDataset(Dataset):
             raise ValueError("The path have to be a directory")
         self.dir = dir
         self.ext = ext
-        self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
+        self.tensorizzatore = transforms.Compose([transforms.ToTensor()])
         self.label = {0:"real", 1:"fake"}
-        self.transform = RandomTransform(p=0)
+        self.transform = RandomTransform(p=0.5)
         if not (self.dir / ".info").exists():
             self.__write_info__()
         else:

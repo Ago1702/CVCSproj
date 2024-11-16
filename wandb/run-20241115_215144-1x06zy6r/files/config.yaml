@@ -1,0 +1,29 @@
+_wandb:
+    value:
+        cli_version: 0.18.7
+        m: []
+        python_version: 3.10.12
+        t:
+            "1":
+                - 55
+            "2":
+                - 55
+            "3":
+                - 2
+                - 16
+                - 23
+                - 55
+            "4": 3.10.12
+            "5": 0.18.7
+            "8":
+                - 5
+            "12": 0.18.7
+            "13": linux-x86_64
+architecture:
+    value: CNN
+dataset:
+    value: ELSA D3
+epochs:
+    value: 10
+learning_rate:
+    value: 0.02
