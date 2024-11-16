@@ -18,6 +18,7 @@ from torchvision.utils import save_image
 from torchvision.io import read_image
 from PIL import Image
 #import matplotlib.pyplot as plt
+from utils.transform import RandomTransform
 
 def remove_transparency(image):
     if image.mode == 'P':
@@ -353,7 +354,7 @@ class DirectoryRandomDataset(IterableDataset):
 
 class DirectorySequentialDataset(Dataset):
     '''
-    Usage: this class is super duper perfect, but do not use it directly. Pass it to a torch.utils.data.Dataloader.
+    Usage: this class is good, but do not use it directly. Pass it to a torch.utils.data.Dataloader.
     Use case: use it for the test dataset only. Sequentiality is not good for learning.
     '''
     def __init__(self, dir: Union[str, Path], ext:str = "png"):
@@ -366,6 +367,7 @@ class DirectorySequentialDataset(Dataset):
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.PILToTensor()])
         self.label = {0:"real", 1:"fake"}
+        self.transform = RandomTransform(p=0)
         if not (self.dir / ".info").exists():
             self.__write_info__()
         else:
@@ -423,12 +425,9 @@ class DirectorySequentialDataset(Dataset):
                 #print('A corrupted image was found')
                 continue
 
-            try:
-                return self.tensorizzatore(imager).type(torch.float32), self.tensorizzatore(imagef).type(torch.float32)
-            except:
-                index+=1
-                #print('A corrupted image was found')
-                continue
+            
+            return self.transform((self.tensorizzatore(imager).type(torch.float32)).unsqueeze(0)), self.transform((self.tensorizzatore(imagef).type(torch.float32)).unsqueeze(0))
+                
         
 
 """

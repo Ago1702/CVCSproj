@@ -8,6 +8,8 @@ from utils.transform import RandomTransform
 from torchvision.transforms import v2
 from torchvision.utils import save_image
 import gc
+import numpy as np
+from numpy.random import permutation
 
 class TransformDataLoader(DataLoader):
     '''
@@ -110,8 +112,13 @@ class TransformDataLoader(DataLoader):
                 y_batch_list.append(torch.tensor(1, dtype=torch.long))
                 gc.collect()
 
-        x_batch_tensor: torch.Tensor = torch.stack(x_batch_list).squeeze(1)
-        y_batch_tensor: torch.Tensor = torch.stack(y_batch_list)
+        #time to shuffle
+        indices = permutation(len(y_batch_list))
+        x_batch_list_shuffled = [x_batch_list[i] for i in indices]
+        y_batch_list_shuffled = [y_batch_list[i] for i in indices]
+        
+        x_batch_tensor: torch.Tensor = torch.stack(x_batch_list_shuffled).squeeze(1)
+        y_batch_tensor: torch.Tensor = torch.stack(y_batch_list_shuffled)
 
         x_min = torch.min(x_batch_tensor)
         x_max = torch.max(x_batch_tensor)

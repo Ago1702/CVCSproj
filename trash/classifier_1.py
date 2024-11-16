@@ -22,19 +22,21 @@ def point_model_remover(state_dict):
 if __name__ == '__main__':
     torch.backends.cudnn.enabled=False
     
-    embedder = resnet_cbam.v2()
+    embedder = resnet_cbam.v4()
     classifier = nn.Sequential(nn.BatchNorm1d(512),nn.Linear(in_features=512,out_features=1),nn.Sigmoid())
     
-    state_dict = torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v2_164500.pth',weights_only=True)
+    state_dict = torch.load('/work/cvcs2024/VisionWise/weights/res_weight_contrastive_v4_13000.pth',weights_only=True)
     state_dict = point_model_remover(state_dict=state_dict)
     
     embedder.load_state_dict(state_dict)
-    
+    for param in embedder.parameters():
+        param.requires_grad = False
+        
     model = nn.Sequential(embedder,classifier).cuda()
     model = nn.DataParallel(model)
     model.train()
     
-    optimizer = optim.Adam(model.parameters(),lr=0.001)    
+    optimizer = optim.Adam(model.parameters(),lr=0.0001)    
     criterion = nn.BCELoss()
     
     dataset = DirectoryRandomDataset('/work/cvcs2024/VisionWise/train')

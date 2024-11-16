@@ -1,0 +1,20 @@
+Trasformazioni:
+    fare center crop in fase di test
+
+Logging:
+    usare wandb
+
+Loss: 
+    usare info-nce
+
+Come lavorare
+-features resnet (sceglierne una)
+    classificazione con bce
+
+-contrastive sulla resnet
+-aggiungere cbam
+
+wandb                   -> https://wandb.ai/site/
+loss                    -> https://github.com/RElbers/info-nce-pytorch
+paper su trasformate    -> https://arxiv.org/pdf/2211.00680
+retrieval               -> https://github.com/facebookresearch/faiss

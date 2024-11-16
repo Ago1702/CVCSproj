@@ -1,3 +1,8 @@
+import torch
+import torch.nn as nn
+import os
+import re
+
 def point_module_remover(state_dict):
     '''
     The weights for the model were saved when it was wrapped by a nn.DataParallel.
@@ -10,3 +15,64 @@ def point_module_remover(state_dict):
         new_state_dict[new_key] = value
         
     return new_state_dict
+
+def save_checkpoint(checkpoint_name:str,iteration_index:int,optimizer,model:nn.Module,path:str = '/work/cvcs2024/VisionWise/weights'):
+    """
+    Useful function to automatically save the checkpoints
+    
+    Args:
+        checkpoint_name (str): name of the file
+        iteration (int): iteration (or epoch) number
+        optimizer (_type_): the optimizer
+        model (_type_): the net
+    """
+    checkpoint_name+=('_'+str(iteration_index))
+    if not checkpoint_name.endswith('.pth'):
+        checkpoint_name += '.pth'
+    checkpoint ={
+        'model' : model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'iteration_index' : iteration_index
+    }
+    save_path = os.path.join(path,checkpoint_name)
+    torch.save(checkpoint,save_path)
+
+def load_checkpoint(checkpoint_name:str,optimizer,model:nn.Module,path:str = '/work/cvcs2024/VisionWise/weights'):
+    """_summary_
+
+    Args:
+        checkpoint_name (str): name of the checkpoint file
+        optimizer (_type_): _description_
+        model (nn.Module): _description_
+        path (str, optional): _description_. Defaults to '/work/cvcs2024/VisionWise/weights'.
+
+    Returns:
+        int: the iteration number
+    """
+    list_of_all_files = os.listdir(path)
+    list_of_candidate_files = [file for file in list_of_all_files if checkpoint_name in file]
+    
+    max_value = float('-inf')
+    load_path = None
+    
+    for cand in list_of_candidate_files:
+        
+        numbers = list(map(int, re.findall(r'\d+', cand)))
+        if numbers:
+            # Find the largest number in this string
+            largest_number = max(numbers)
+            # Update if this is the largest number found so far
+            if largest_number > max_value:
+                max_value = largest_number
+                load_path = cand
+                
+    load_path = os.path.join(path,load_path)
+    if not os.path.exists(load_path):
+        raise RuntimeError('cannot find checkpoint file')
+    checkpoint = torch.load(load_path,weights_only=False)
+    
+    model.load_state_dict(checkpoint['model'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    
+    return checkpoint['iteration_index']
+    
