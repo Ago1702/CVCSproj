@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from data.datasets import DirectoryRandomDataset
 from data.datasets import DirectorySequentialDataset
 from utils.transform import RandomTransform
+from torchvision.transforms import v2
 from torchvision.utils import save_image
 import gc
 import numpy as np
@@ -28,7 +29,7 @@ class TransformDataLoader(DataLoader):
 
     '''
     def __init__(self, cropping_mode:int ,dataset:DirectoryRandomDataset, num_workers: int,dataset_mode:int, batch_size:int =32,num_channels:int = 3
-                 , probability: float = 0.5, pacman : bool = False
+                 , probability: float = 0.5, pacman : bool = False, transform:v2.Transform = None
                  ):
         
         '''
@@ -42,6 +43,7 @@ class TransformDataLoader(DataLoader):
             batch_size (int) : first dimension of the images tensor that the dataloader will return. MUST be an even number
             num_channels (int) : second dimension of the images tensor that the dataloader will return
             probability (float) : probability that a transformation will be applied. It will be passed to the RandomTransform constructor
+            transform (v2.Transform) : a torchvisio transform applied after the random transformation
         Attributes: 
             tuple[torch.Tensor , torch.Tensor] : a tuple, containing the stacked images and the stacked labels
         '''
@@ -61,7 +63,10 @@ class TransformDataLoader(DataLoader):
             batch_size=int(batch_size/2)
 
         super().__init__(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=self.custom_collate)
-        self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman)
+        if transform is None:
+            self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman)
+        else:
+            self.transform = v2.Compose([RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman), transform])
         self.cropping_mode = cropping_mode
         self.num_channels = num_channels
         self.dataset_mode = dataset_mode
