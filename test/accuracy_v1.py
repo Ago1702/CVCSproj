@@ -19,8 +19,11 @@ from torch.amp import autocast, GradScaler
 from utils import notifier
 from torch.utils.data import DataLoader
 from models.resnets import v1
+import wandb
+import time
+
 if __name__ == "__main__":
-    iteration_index = 400
+    iteration_index = 800
     if not torch.cuda.is_available():
         raise RuntimeError("Se non c'è cuda, lo prendi in cu..da!")
     
@@ -33,7 +36,8 @@ if __name__ == "__main__":
 
     classifier = v1()
     classifier.load_state_dict(torch.load(f'/work/cvcs2024/VisionWise/weights/checkpoint_res_class_r4_{iteration_index}.pth')['model'])
-    classifier=nn.Sequential(classifier,nn.Sigmoid()).cuda()
+    #classifier=nn.Sequential(classifier,nn.Sigmoid()).cuda()
+    
 
 
     accuracy = 0

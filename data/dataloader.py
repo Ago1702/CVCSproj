@@ -28,7 +28,7 @@ class TransformDataLoader(DataLoader):
         custom_collate(batch) : a function declared as a method to be class aware. stacks images into a unique tensor
 
     '''
-    def __init__(self, cropping_mode:int ,dataset:DirectoryRandomDataset, num_workers: int,dataset_mode:int, batch_size:int =32,num_channels:int = 3
+    def __init__(self, cropping_mode:int ,dataset, num_workers: int,dataset_mode:int, batch_size:int =32,num_channels:int = 3
                  , probability: float = 0.5, pacman : bool = False, transform:v2.Transform = None
                  ):
         
@@ -57,7 +57,6 @@ class TransformDataLoader(DataLoader):
         if batch_size%2 != 0:
             raise RuntimeError(f'batch_size must be even')
 
-        dataset.change_mode(dataset_mode)
 
         if dataset_mode ==DirectoryRandomDataset.COUP:
             batch_size=int(batch_size/2)

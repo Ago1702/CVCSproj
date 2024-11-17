@@ -190,7 +190,7 @@ class DirectoryRandomDataset(IterableDataset):
         self.label = {0 : "real", 1 : "fake"}
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.ToTensor()])
-        self.behaviour = self.__random_image__
+        self.behaviour = self.__random_couple__
         self.max_iter = max_iter
         self.iter = 0
     
@@ -367,7 +367,7 @@ class DirectorySequentialDataset(Dataset):
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.ToTensor()])
         self.label = {0:"real", 1:"fake"}
-        self.transform = RandomTransform(p=0.5)
+        self.transform = RandomTransform(p=0)
         if not (self.dir / ".info").exists():
             self.__write_info__()
         else:
@@ -393,40 +393,34 @@ class DirectorySequentialDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
-        while(True):
-            if index<0:
-                    raise RuntimeError('Negative index (????????????????????????)')
+        pr = self.dir / f"image-real-{index:08d}.{self.ext}"
+        pf = self.dir / f"image-fake-{index:08d}.{self.ext}"
             
-            pr = self.dir / f"image-real-{index:08d}.{self.ext}"
-            pf = self.dir / f"image-fake-{index:08d}.{self.ext}"
-            try:
-                #opening the two images
-                imager = Image.open(pr)
-                imagef = Image.open(pf)
+        #opening the two images
+        imager = Image.open(pr)
+        imagef = Image.open(pf)
 
-                #removing transparency
-                imager = remove_transparency(imager)
-                imagef = remove_transparency(imagef)
+        #removing transparency
+        imager = remove_transparency(imager)
+        imagef = remove_transparency(imagef)
 
-                #converting back to RGB 
-                imager = to_RGB(imager)
-                imagef = to_RGB(imagef)
+        #converting back to RGB 
+        imager = to_RGB(imager)
+        imagef = to_RGB(imagef)
 
-                if is_corrupted_1x1(imager) or is_corrupted_1x1(imagef):
-                    index+=1
-                    #print('A 1x1 image was found')
-                    continue
-                if is_damaging(imager) or is_damaging(imagef):
-                    index+=1
-                    #print('A damaging image was found')
-                    continue
-            except:
-                index+=1
-                #print('A corrupted image was found')
-                continue
+        '''if is_corrupted_1x1(imager) or is_corrupted_1x1(imagef):
+            index+=1
+            #print('A 1x1 image was found')
+            continue
+        if is_damaging(imager) or is_damaging(imagef):
+            index+=1
+            #print('A damaging image was found')
+            continue'''
+        
 
+        return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
             
-            return self.transform((self.tensorizzatore(imager).type(torch.float32)).unsqueeze(0)), self.transform((self.tensorizzatore(imagef).type(torch.float32)).unsqueeze(0))
+            
                 
         
 
