@@ -101,7 +101,7 @@ class RandomTransform(v2.Transform):
     def __init__(self, p:float = 0.5, scale:float=0.8,
                  transform:tuple = (v2.RandomPerspective(p=1), v2.RandomAffine(90), v2.GaussianBlur(3), v2.RandomAdjustSharpness(2, 1),
                                     v2.RandomHorizontalFlip(p=1),v2.RandomVerticalFlip(p=1)),
-                 SEED:int = 30347, cropping_mode:int = GLOBAL_CROP, pacman: bool = False):
+                 SEED:int = 30347, cropping_mode:int = GLOBAL_CROP, pacman: bool = False, center_crop:bool = False):
         super().__init__()
     
         # checking the values of the provided parameters
@@ -119,6 +119,7 @@ class RandomTransform(v2.Transform):
         self.rnd = random.Random(SEED)
         self.cropping_mode = cropping_mode
         self.pacman = pacman
+        self.center_crop = center_crop
         pass
 
     def get_transform(self,image:torch.Tensor) -> v2.Transform:
@@ -155,8 +156,10 @@ class RandomTransform(v2.Transform):
                 trfs.append(GridRandomCrop(size,(6/30,14/30)))
             else:
                 trfs.append(GridRandomCrop(size))
-        else:
+        elif not self.center_crop:
             trfs.append(v2.RandomCrop(size=size))
+        else:
+            trfs.append(v2.CenterCrop(size=size))
         comp = v2.Compose(trfs)
         return comp
 

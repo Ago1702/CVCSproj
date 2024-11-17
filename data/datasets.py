@@ -189,7 +189,7 @@ class DirectoryRandomDataset(IterableDataset):
         self.len = self.len // 2
         self.label = {0 : "real", 1 : "fake"}
         self.ext = ext
-        self.tensorizzatore = transforms.Compose([transforms.ToTensor()])
+        self.tensorizzatore = transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)])
         self.behaviour = self.__random_couple__
         self.max_iter = max_iter
         self.iter = 0
@@ -365,7 +365,7 @@ class DirectorySequentialDataset(Dataset):
             raise ValueError("The path have to be a directory")
         self.dir = dir
         self.ext = ext
-        self.tensorizzatore = transforms.Compose([transforms.ToTensor()])
+        self.tensorizzatore = transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)])
         self.label = {0:"real", 1:"fake"}
         self.transform = RandomTransform(p=0)
         if not (self.dir / ".info").exists():
@@ -393,6 +393,8 @@ class DirectorySequentialDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
+        if(index>=4250):
+            raise StopIteration
         pr = self.dir / f"image-real-{index:08d}.{self.ext}"
         pf = self.dir / f"image-fake-{index:08d}.{self.ext}"
             

@@ -118,25 +118,40 @@ class CBAM(nn.Module):
 # 
 # L'idea è, di base, quella della GoogleNet 2014
 #  
-
+def initialize_weights(module):
+    """
+    Initializes weights for a given module.
+    """
+    if isinstance(module, nn.Conv2d):
+        torch.nn.init.kaiming_normal_(module.weight, mode='fan_out', nonlinearity='relu')
+        if module.bias is not None:
+            torch.nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.Linear):
+        torch.nn.init.xavier_normal_(module.weight)
+        if module.bias is not None:
+            torch.nn.init.zeros_(module.bias)
+    elif isinstance(module, nn.BatchNorm2d):
+        torch.nn.init.ones_(module.weight)
+        torch.nn.init.zeros_(module.bias)
+        
 class MultiCBAM(nn.Module):
     def __init__(self, channel:int, r:float | int | list[int|float] = 16):
         super(MultiCBAM, self).__init__()
         if isinstance(r, list):
-            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r[0])
-            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r[1])
-            #self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r[2])
+            self.bam_small = CBAM(channel, kernel_size=1, reduction_ratio=r[0])
+            self.bam_medium = CBAM(channel, kernel_size=3, reduction_ratio=r[1])
+            self.bam_large = CBAM(channel, kernel_size=7, reduction_ratio=r[2])
         else:
-            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r)
-            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r)
-            #self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r)
-        self.conv1 = nn.Conv2d(in_channels=channel * 2, out_channels=channel, kernel_size=1)
+            self.bam_small = CBAM(channel, kernel_size=1, reduction_ratio=r)
+            self.bam_medium = CBAM(channel, kernel_size=3, reduction_ratio=r)
+            self.bam_large = CBAM(channel, kernel_size=7, reduction_ratio=r)
+        self.conv1 = nn.Conv2d(in_channels=channel * 3, out_channels=channel, kernel_size=1)
     
     def forward(self, x:torch.Tensor) -> torch.Tensor:
         x_small = self.bam_small(x)
         x_medium = self.bam_medium(x)
-        #x_large = self.bam_large(x)
-        x_final = torch.concat([x_small, x_medium], 1)
+        x_large = self.bam_large(x)
+        x_final = torch.concat([x_small, x_medium,x_large], 1)
         x_final = self.conv1(x_final)
         return x + x_final
     
@@ -144,13 +159,13 @@ class ChannelMultiCBAM(nn.Module):
     def __init__(self, channel:int, r:float | int | list[int|float] = 16):
         super(ChannelMultiCBAM, self).__init__()
         if isinstance(r, list):
-            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r[0],no_spatial=True)
-            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r[1],no_spatial=True)
-            self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r[2],no_spatial=True)
+            self.bam_small = CBAM(channel, kernel_size=1, reduction_ratio=r[0],no_spatial=True)
+            self.bam_medium = CBAM(channel, kernel_size=3, reduction_ratio=r[1],no_spatial=True)
+            self.bam_large = CBAM(channel, kernel_size=7, reduction_ratio=r[2],no_spatial=True)
         else:
-            self.bam_small = CBAM(channel, kernel_size=3, reduction_ratio=r,no_spatial=True)
-            self.bam_medium = CBAM(channel, kernel_size=7, reduction_ratio=r,no_spatial=True)
-            self.bam_large = CBAM(channel, kernel_size=15, reduction_ratio=r,no_spatial=True)
+            self.bam_small = CBAM(channel, kernel_size=1, reduction_ratio=r,no_spatial=True)
+            self.bam_medium = CBAM(channel, kernel_size=3, reduction_ratio=r,no_spatial=True)
+            self.bam_large = CBAM(channel, kernel_size=7, reduction_ratio=r,no_spatial=True)
         self.conv1 = nn.Conv2d(in_channels=channel * 3, out_channels=channel, kernel_size=1)
     
     def forward(self, x:torch.Tensor) -> torch.Tensor:

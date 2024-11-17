@@ -27,6 +27,19 @@ def point_module_remover(state_dict):
         
     return new_state_dict
 
+def state_dict_adapter(state_dict,string_to_remove:str,string_to_insert:str=''):
+    '''
+    The weights for the model were saved when it was wrapped by a nn.DataParallel.
+    That means that the keys have an extra "module." part at the beginning.
+    Use this function to remove it, allowing you to load the weights in a non-parallel network
+    '''
+    new_state_dict = {}
+    for key, value in state_dict.items():
+        new_key = key.replace(string_to_remove,string_to_insert) 
+        new_state_dict[new_key] = value
+        
+    return new_state_dict
+
 def save_checkpoint(checkpoint_name:str,iteration_index:int,optimizer,model:nn.Module,path:str = '/work/cvcs2024/VisionWise/weights'):
     """
     Useful function to automatically save the checkpoints

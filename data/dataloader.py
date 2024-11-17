@@ -29,7 +29,7 @@ class TransformDataLoader(DataLoader):
 
     '''
     def __init__(self, cropping_mode:int ,dataset, num_workers: int,dataset_mode:int, batch_size:int =32,num_channels:int = 3
-                 , probability: float = 0.5, pacman : bool = False, transform:v2.Transform = None
+                 , probability: float = 0.5, pacman : bool = False, transform:v2.Transform = None,center_crop:bool = False
                  ):
         
         '''
@@ -44,6 +44,7 @@ class TransformDataLoader(DataLoader):
             num_channels (int) : second dimension of the images tensor that the dataloader will return
             probability (float) : probability that a transformation will be applied. It will be passed to the RandomTransform constructor
             transform (v2.Transform) : a torchvisio transform applied after the random transformation
+            center_crop (bool) : passed to the RandomTransform, defines if a center crop should be applied instead of a random crop (for testing)
         Attributes: 
             tuple[torch.Tensor , torch.Tensor] : a tuple, containing the stacked images and the stacked labels
         '''
@@ -63,13 +64,13 @@ class TransformDataLoader(DataLoader):
 
         super().__init__(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=self.custom_collate)
         if transform is None:
-            self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman)
+            self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman,center_crop=center_crop)
         else:
-            self.transform = v2.Compose([RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman), transform])
+            self.transform = v2.Compose([RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman,center_crop=center_crop), transform])
         self.cropping_mode = cropping_mode
         self.num_channels = num_channels
         self.dataset_mode = dataset_mode
-
+        
 
     def custom_collate(self,batch):
         '''
