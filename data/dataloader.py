@@ -61,6 +61,9 @@ class TransformDataLoader(DataLoader):
 
         if dataset_mode ==DirectoryRandomDataset.COUP:
             batch_size=int(batch_size/2)
+            
+        if isinstance(dataset,DirectoryRandomDataset):
+            dataset.change_mode(dataset_mode)
 
         super().__init__(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=self.custom_collate)
         if transform is None:
@@ -70,7 +73,6 @@ class TransformDataLoader(DataLoader):
         self.cropping_mode = cropping_mode
         self.num_channels = num_channels
         self.dataset_mode = dataset_mode
-        
 
     def custom_collate(self,batch):
         '''

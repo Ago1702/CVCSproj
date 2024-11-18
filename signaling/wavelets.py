@@ -45,6 +45,8 @@ class WaveletTransform(v2.Transform):
             res.extend(tensor)
         res = np.concatenate(res, -3)
         return torch.tensor(res)
+    def __call__(self, x)->torch.Tensor:
+        return self.forward(x)
 
 
 if __name__ == "__main__":

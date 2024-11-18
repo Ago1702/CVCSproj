@@ -79,7 +79,28 @@ class v4(nn.Module):
         x = self.resnet_cbam_embedder(x)
         x = self.final(x)
         return x
+    
+class v5(nn.Module):
+    def __init__(self):
+        super(v5,self).__init__()
+        resnet = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
+        resnet_children = list(resnet.children())[1:-1]
+
+        first_conv = nn.Conv2d(
+            in_channels=39, out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+            )
+        first_conv.apply(modules.initialize_weights)
+        
+        resnet_children.insert(0,first_conv)
+        self.resnet = nn.Sequential(*resnet_children)
+        
+        self.final = nn.Sequential(nn.Flatten(),nn.Linear(in_features=512,out_features=1))
+        self.final.apply(modules.initialize_weights)
+    def forward(self,x:torch.Tensor):
+        x = self.resnet(x)
+        x = self.final(x)
+        return x
 if __name__ == '__main__':
     torch.backends.cudnn.enabled = False
-    model = v4().cuda()
-    print(model(torch.Tensor(10,3,200,200).cuda()).shape)
+    model = v5().cuda()
+    print(model(torch.Tensor(10,39,200,200).cuda()).shape)

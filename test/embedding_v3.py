@@ -25,9 +25,9 @@ import time
 from utils.helpers import state_dict_adapter
 
 if __name__ == "__main__":
-    #good iter
+    #good iter 3900 for run 1
     test_batch_size= 100
-    iteration_index = 1900
+    iteration_index = 9300
     if not torch.cuda.is_available():
         raise RuntimeError("Se non c'è cuda, lo prendi in cu..da!")
     

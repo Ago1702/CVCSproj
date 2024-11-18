@@ -22,6 +22,8 @@ import random
 import os
 import time
 
+from info_nce import InfoNCE, info_nce
+
 wandb.init(
     # set the wandb project where this run will be logged
     project="Resnet CBAM Contrastive",
@@ -43,7 +45,7 @@ dataloader = TransformDataLoader(
     dataset=dataset,
     batch_size=50,
     num_workers=4,
-    dataset_mode=DirectoryRandomDataset.COUP
+    dataset_mode=DirectoryRandomDataset.BASE
     )
 
 checkpoint_name = 'checkpoint_rescbam_contr_r1'
@@ -56,8 +58,8 @@ torch.backends.cudnn.benchmark = True
 
 #learning stuff
 model = nn.DataParallel(resnets.v3()).cuda()
-optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
-criterion = loss.ContrastiveLoss_V1(margin=1.0)
+optimizer = torch.optim.Adam(model.parameters(),lr=0.00001)
+criterion = loss.ContrastiveLoss_V1(temperature=2)
 
 #loading previous state
 start_index = load_checkpoint(checkpoint_name,optimizer,model)
@@ -75,7 +77,7 @@ for n, (images, labels) in enumerate(dataloader,start=start_index):
 
     print(f"Iteration {n + 1} --> Loss is {iter_loss.item():.6f}", flush=True)
     
-    if (n + 1) % 5 == 0:
+    if (n + 1) % 1 == 0:
         optimizer.step()
         optimizer.zero_grad()
     

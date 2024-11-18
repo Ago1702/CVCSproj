@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.transforms import v2
 import numpy as np
+from info_nce import InfoNCE, info_nce
 
 def is_partner(i:int,j:int,labels: torch.tensor)->bool:
     '''
@@ -28,10 +29,11 @@ def is_partner(i:int,j:int,labels: torch.tensor)->bool:
     else:
         raise RuntimeError(f'Invalid label found:{labels[i]}')
 class ContrastiveLoss_V1(nn.Module):
-    def __init__(self,couple_boost:float = 1.0,margin:float = 1.0):
+    def __init__(self,couple_boost:float = 1.0,margin:float = 1.0,temperature:float = 1.0):
         super(ContrastiveLoss_V1,self).__init__()
         self.couple_boost=couple_boost
         self.margin = margin
+        self.temperature = temperature
 
     def forward(self, embeddings:torch.Tensor,labels:torch.Tensor):
         '''
@@ -52,7 +54,7 @@ class ContrastiveLoss_V1(nn.Module):
                     continue
                 distance = F.pairwise_distance(embeddings[i], embeddings[j])
                 if labels[i] == labels[j]:
-                    positive_loss = 0.5 * torch.pow(distance, 2)
+                    positive_loss = 0.5 * torch.pow(torch.clamp(distance - 0.1, min= 0), 2)
                     if torch.isnan(positive_loss):
                         print(f"NaN detected in positive loss for samples {i} and {j}")
                         print(embeddings[i])
@@ -185,8 +187,42 @@ class ContrastiveLoss_V4(nn.Module):
                     negative_loss = torch.pow(torch.clamp(self.margin - distance_neg, min= 0), 2)
                     loss+=negative_loss
                     negative_comparisons+=1
-                if negative_comparisons > 20:
-                    break
             n_of_comparisons+=negative_comparisons
         
         return loss/n_of_comparisons
+    
+class InfoNCE_complete_V1(nn.Module):
+    def __init__(self):
+        super(InfoNCE_complete_V1,self).__init__()
+
+    def forward(self, embeddings:torch.Tensor,labels:torch.Tensor):
+        '''
+        Args: 
+            embeddings (torch.Tensor): a tensor with two dimensions: (n_samples,embedding_size)
+            labels (torch.Tensor): a tensor with two dimensions: (n_samples,1)
+        '''
+        #label == 0 --> real
+        #label == 1 --> fake
+        out_loss = 0.0
+        embeddings = F.normalize(embeddings,p=2,dim=1)
+        N = embeddings.size(0)
+        
+        for anchor_idx in range(N):
+            anchor_loss = InfoNCE(negative_mode='unpaired')
+            
+            pos_indices = torch.where((labels == labels[anchor_idx]) & (torch.arange(N).cuda() != anchor_idx))[0]
+            if len(pos_indices) > 0:
+                #random selection of a positive sample
+                pos_idx = pos_indices[torch.randint(len(pos_indices), (1,)).item()]
+                positive = embeddings[pos_idx]
+            else:
+                #impossible case
+                raise ValueError(f"No positive sample found for anchor index {anchor_idx}.")
+            
+            #getting all the negative samples
+            neg_indices = torch.where(labels != labels[anchor_idx])[0]
+            negatives = embeddings[neg_indices]
+            out_loss += anchor_loss(embeddings[anchor_idx].unsqueeze(0),positive.unsqueeze(0),negatives)
+            
+        
+        return out_loss/N

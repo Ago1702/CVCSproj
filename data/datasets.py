@@ -367,7 +367,6 @@ class DirectorySequentialDataset(Dataset):
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)])
         self.label = {0:"real", 1:"fake"}
-        self.transform = RandomTransform(p=0)
         if not (self.dir / ".info").exists():
             self.__write_info__()
         else:
