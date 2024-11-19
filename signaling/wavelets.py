@@ -32,7 +32,7 @@ class WaveletTransform(v2.Transform):
                 - cV = Vertical detail
                 - cD = Diagonal detail
         """
-        x = image.numpy()
+        x = image.cpu().numpy()
         if len(x.shape) < 2:
             raise ValueError("Incorrect shape, the tensor must be, at least, bi-dimensional")
         while len(x.shape) < 4:

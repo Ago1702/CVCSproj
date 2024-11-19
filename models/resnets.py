@@ -84,8 +84,8 @@ class v5(nn.Module):
     def __init__(self):
         super(v5,self).__init__()
         resnet = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
-        resnet_children = list(resnet.children())[1:-1]
-
+        resnet_children = list(resnet.children())[0:-1]
+        print(resnet_children[0])
         first_conv = nn.Conv2d(
             in_channels=39, out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
             )
@@ -103,4 +103,4 @@ class v5(nn.Module):
 if __name__ == '__main__':
     torch.backends.cudnn.enabled = False
     model = v5().cuda()
-    print(model(torch.Tensor(10,39,200,200).cuda()).shape)
+    #print(model(torch.Tensor(10,39,200,200).cuda()).shape)

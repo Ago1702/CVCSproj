@@ -44,7 +44,7 @@ dataloader = TransformDataLoader(
     batch_size=20,
     num_workers=2,
     dataset_mode=DirectoryRandomDataset.COUP,
-    transform = wavelets.WaveletTransform
+    transform = wavelets.WaveletTransform()
     )
 
 checkpoint_name = 'checkpoint_w_res_class_r1'
