@@ -96,7 +96,7 @@ class RandomTransform(v2.Transform):
     """
     GLOBAL_CROP: int = 0
     LOCAL_CROP: int = 1
-    GLOBAL_CROP_SIZE: tuple[int,int] = (200,200)
+    GLOBAL_CROP_SIZE: tuple[int,int] = (224,224)
     LOCAL_CROP_SIZE: tuple[int,int]= (80,80)
     def __init__(self, p:float = 0.5, scale:float=0.8,
                  transform:tuple = (v2.RandomPerspective(p=1), v2.RandomAffine(90), v2.GaussianBlur(3), v2.RandomAdjustSharpness(2, 1),
@@ -177,8 +177,8 @@ class RandomTransform(v2.Transform):
         if x.dim() != 4:
             raise RuntimeError('Tensors must be 4 dimensional: batch_size, channels, height, width') 
         smallest_dimension = min(x.size(2),x.size(3))
-        if smallest_dimension < 200:
-            scale = math.ceil(200/smallest_dimension)
+        if smallest_dimension < 224:
+            scale = math.ceil(224/smallest_dimension)
             if scale > 20:
                 raise RuntimeError(f'Strange value for scale: {scale}. Dimensions were {x.size(0)} , {x.size(1)},{x.size(2)} , {x.size(3)}')
             

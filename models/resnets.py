@@ -51,8 +51,8 @@ class v3(nn.Module):
     def __init__(self):
         super(v3,self).__init__()
         resnet_cbam = v2()
-        
-        self.resnet_cbam = nn.Sequential(*list(resnet_cbam.children())[:-2])
+        children = list(resnet_cbam.children())[:-2]
+        self.resnet_cbam = nn.Sequential(*children)
         final = nn.Sequential(nn.AvgPool2d(kernel_size=7),nn.Flatten(),nn.Linear(in_features=2048,out_features=512))
         final.apply(modules.initialize_weights)
         self.final = final
@@ -84,8 +84,7 @@ class v5(nn.Module):
     def __init__(self):
         super(v5,self).__init__()
         resnet = models.resnet34(weights=models.ResNet34_Weights.IMAGENET1K_V1)
-        resnet_children = list(resnet.children())[0:-1]
-        print(resnet_children[0])
+        resnet_children = list(resnet.children())[1:-1]
         first_conv = nn.Conv2d(
             in_channels=39, out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
             )
@@ -100,7 +99,54 @@ class v5(nn.Module):
         x = self.resnet(x)
         x = self.final(x)
         return x
+    
+class v6(nn.Module):
+    def __init__(self):
+        super(v6,self).__init__()
+        resnet_cbam = v2()
+        resnet_cbam.load_state_dict(state_dict_adapter(torch.load('/work/cvcs2024/VisionWise/weights/checkpoint_rescbam_class_r1_4900.pth',weights_only=False)['model'],string_to_remove='module.'))
+        
+        children = list(resnet_cbam.children())[:-1]
+        self.resnet_cbam = nn.Sequential(*children)
+        final = nn.Sequential(nn.AvgPool2d(kernel_size=7),nn.Flatten(),nn.Linear(in_features=2048,out_features=512))
+        final.apply(modules.initialize_weights)
+        self.final = final
+    def forward(self,x:torch.Tensor):
+        x = self.resnet_cbam(x)
+        x = self.final(x)
+        return x
+    
+class v7(nn.Module):
+    def __init__(self):
+        super(v7,self).__init__()
+        first_conv = nn.Conv2d(
+            in_channels=39, out_channels=64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False
+            )
+        first_conv.apply(modules.initialize_weights)
+        
+        resnet_cbam = v2(freeze_resnet=False)
+        resnet_cbam.load_state_dict(state_dict_adapter(torch.load('/work/cvcs2024/VisionWise/weights/checkpoint_rescbam_class_r1_4900.pth',weights_only=False)['model'],string_to_remove='module.'))
+        
+        children_1 = list(list(resnet_cbam.children())[0].children())[1:]
+        backbone_1 = nn.Sequential(*children_1)
+        
+        children_2 = list(resnet_cbam.children())[1:-1]
+        backbone_2 = nn.Sequential(*children_2)
+
+        backbone = nn.Sequential(backbone_1,backbone_2)
+        final = nn.Sequential(nn.AvgPool2d(kernel_size=7),nn.Flatten(),nn.Linear(in_features=2048,out_features=512))
+        final.apply(modules.initialize_weights)
+        
+        self.first_conv = first_conv
+        self.backbone = backbone
+        self.final = final
+    def forward(self,x:torch.Tensor):
+        x = self.first_conv(x)
+        x = self.backbone(x)
+        x = self.final(x)
+        return x
+    
 if __name__ == '__main__':
     torch.backends.cudnn.enabled = False
-    model = v5().cuda()
-    #print(model(torch.Tensor(10,39,200,200).cuda()).shape)
+    model = v7().cuda()
+    print(model(torch.Tensor(10,39,200,200).cuda()).shape)
