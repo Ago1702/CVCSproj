@@ -24,7 +24,7 @@ wandb.init(
     name = "run 1",
     # track hyperparameters and run metadata
     config={
-    "learning_rate": 0.0001,
+    "learning_rate": 0.00001,
     "architecture": "CNN + CBAM",
     "dataset": "ELSA D3"
     },
@@ -52,8 +52,8 @@ torch.backends.cudnn.benchmark = True
 
 #learning stuff
 model = nn.DataParallel(nets.cbam_classifier_50()).cuda()
-optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
-scheduler = ExponentialLR(optimizer=optimizer,gamma=0.90)
+optimizer = torch.optim.Adam(model.parameters(),lr=0.00001)
+scheduler = ExponentialLR(optimizer=optimizer,gamma=0.95)
 criterion = nn.BCEWithLogitsLoss()  
 
 #loading previous state
@@ -78,7 +78,7 @@ for n, (images, labels) in enumerate(dataloader,start=start_index):
         optimizer.step()
         optimizer.zero_grad()
     
-    if (n + 1) % 20 == 0:
+    if (n + 1) % 50 == 0:
         scheduler.step()
         
     #logging data on wandb
@@ -126,7 +126,7 @@ for n, (images, labels) in enumerate(dataloader,start=start_index):
                 pass
             print('Accuracy is -->' + str(accuracy*100/max_iter) + '%')
                 
-    if(n+1)%4000 == 0:
+    if(n+1)%10000 == 0:
         wandb.finish()
         break
 

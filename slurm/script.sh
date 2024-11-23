@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=VisionWise                           
-#SBATCH --output=outputs/output_152.txt                    
-#SBATCH --error=outputs/error_152.txt                      
+#SBATCH --output=outputs/output_TEST.txt                    
+#SBATCH --error=outputs/error_TEST.txt                      
 #SBATCH --time=24:00:00                                 
 #SBATCH --partition=all_usr_prod                        # all_serial all_usr_prod boost_usr_prod
 #SBATCH --gres=gpu:2                                   
@@ -19,4 +19,4 @@ cd ~/CVCSproj/slurm
 
 export PYTHONPATH=~/CVCSproj:$PYTHONPATH
 source ~/CVCSproj/.venv/bin/activate
-python3  ~/CVCSproj/train/cbam_classifier152.py
+python3  ~/CVCSproj/test/TEST.py
