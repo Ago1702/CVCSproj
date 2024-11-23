@@ -4,14 +4,15 @@ from data.datasets import DirectorySequentialDataset
 from data.datasets import DirectoryRandomDataset
 from utils.transform import RandomTransform
 from data.dataloader import TransformDataLoader
-from models.nets import vanilla_resnet_classifier
+from models.nets import vanilla_resnet_classifier_50
+from models.nets import vanilla_resnet_classifier_152
 from utils.helpers import load_checkpoint
 
 torch.cuda.manual_seed_all(42)
 torch.backends.cudnn.enabled = False
 while True:
-    model = nn.DataParallel(vanilla_resnet_classifier()).cuda()
-    model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_vanilla_resnet_classifier_20000.pth',weights_only=False)['model'])
+    model = nn.DataParallel(vanilla_resnet_classifier_50()).cuda()
+    model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_vanilla_resnet50_classifier_20000.pth',weights_only=False)['model'])
     load_checkpoint('ch_vanilla_resnet_classifier',model=model)
     #torch.use_deterministic_algorithms(True)\
     #dataset and dataloader for testing

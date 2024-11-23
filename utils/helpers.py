@@ -61,7 +61,7 @@ def save_checkpoint(checkpoint_name:str,iteration_index:int,optimizer,model:nn.M
     save_path = os.path.join(path,checkpoint_name)
     torch.save(checkpoint,save_path)
 
-def load_checkpoint(checkpoint_name:str,optimizer=None,model:nn.Module=None,path:str = '/work/cvcs2024/VisionWise/weights'):
+def load_checkpoint(checkpoint_name:str,optimizer=None,model:nn.Module=None,path:str = '/work/cvcs2024/VisionWise/weights',un_parallelize = False):
     """_summary_
 
     Args:
@@ -98,8 +98,13 @@ def load_checkpoint(checkpoint_name:str,optimizer=None,model:nn.Module=None,path
         raise RuntimeError('cannot find checkpoint file')
     checkpoint = torch.load(load_path,weights_only=False)
     
+    if un_parallelize:
+        model_state_dict = state_dict_adapter(checkpoint['model'],'module.','')
+    else:
+        model_state_dict = checkpoint['model']
+    
     if model != None:
-        model.load_state_dict(checkpoint['model'])
+        model.load_state_dict(model_state_dict)
     if optimizer != None:
         optimizer.load_state_dict(checkpoint['optimizer'])
     
