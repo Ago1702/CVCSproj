@@ -52,12 +52,12 @@ torch.backends.cudnn.benchmark = True
 
 #learning stuff
 model = nn.DataParallel(nets.vanilla_resnet_classifier_152()).cuda()
-optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
+optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
 scheduler = ExponentialLR(optimizer=optimizer,gamma=0.95)
 criterion = nn.BCEWithLogitsLoss()  
 
 #loading previous state
-start_index = load_checkpoint(checkpoint_name,optimizer,model)
+start_index = load_checkpoint(checkpoint_name=checkpoint_name,optimizer=optimizer,model=model)
 print(f'Loaded checkpoint number: {start_index}',flush=True)
 
 running_loss = 0.0

@@ -12,7 +12,7 @@ torch.backends.cudnn.enabled = True
 while True:
     model = nn.DataParallel(nets.cbam_classifier_152()).cuda()
     #model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_cbam152_classifier_2000.pth',weights_only=False)['model'])
-    print('loaded checkpoint:' + str(load_checkpoint('ch_cbam152_classifier',model=model)))
+    print('loaded checkpoint:' + str(load_checkpoint('ch_cbam152_contrastive_classifier',model=model)))
     
     #torch.use_deterministic_algorithms(True)
     #dataset and dataloader for testing

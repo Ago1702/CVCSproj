@@ -60,8 +60,9 @@ class vanilla_resnet_classifier_50(Complete_Module):
         return x
     
 class cbam_classifier_50(Complete_Module):
-    def __init__(self,name = 'Resnet50-CBAM Classifier',freeze_backbone = True):
+    def __init__(self,name = 'Resnet50-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False):
         super(cbam_classifier_50,self).__init__(name)
+        self.drop_classifier = drop_classifier
         
         vanilla = vanilla_resnet_classifier_50()
         load_checkpoint('ch_vanilla_resnet50_classifier',model=vanilla,un_parallelize=True)
@@ -77,10 +78,21 @@ class cbam_classifier_50(Complete_Module):
         self.embedder = nn.Linear(in_features=2048,out_features=512)
         self.classifier = nn.Linear(in_features=512,out_features=1)
         
-        if freeze_backbone:
+        if freeze_mode == 'none':
+            pass
+        elif freeze_mode == 'resnet':
             for param in self.resnet.parameters():
                 param.requires_grad = False
-                
+        elif freeze_mode == 'embedder':
+            for param in self.resnet.parameters():
+                param.requires_grad = False
+            for param in self.cbam.parameters():
+                param.requires_grad = False
+            for param in self.embedder.parameters():
+                param.requires_grad = False
+        else:
+            raise RuntimeError('Invalid freeze_mode parameter: ' + freeze_mode)
+        
         self.cbam.apply(initialize_weights)
         self.embedder.apply(initialize_weights)
         self.classifier.apply(initialize_weights)
@@ -92,13 +104,15 @@ class cbam_classifier_50(Complete_Module):
         x = self.avg_pool(x)
         x = self.flatten(x)
         x = self.embedder(x)
-        x = self.classifier(x)
+        if not self.drop_classifier:
+            x = self.classifier(x)
         return x
     
 class cbam_classifier_152(Complete_Module):
-    def __init__(self,name = 'Resnet152-CBAM Classifier',freeze_backbone = True):
+    def __init__(self,name = 'Resnet152-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False):
         super(cbam_classifier_152,self).__init__(name)
         
+        self.drop_classifier = drop_classifier
         vanilla = vanilla_resnet_classifier_152()
         load_checkpoint('ch_vanilla_resnet152_classifier',model=vanilla,un_parallelize=True)
         children = list(vanilla.children())
@@ -113,9 +127,22 @@ class cbam_classifier_152(Complete_Module):
         self.embedder = nn.Linear(in_features=2048,out_features=512)
         self.classifier = nn.Linear(in_features=512,out_features=1)
         
-        if freeze_backbone:
+        if freeze_mode == 'none':
+            pass
+        elif freeze_mode == 'resnet':
             for param in self.resnet.parameters():
                 param.requires_grad = False
+        elif freeze_mode == 'embedder':
+            for param in self.resnet.parameters():
+                param.requires_grad = False
+            for param in self.cbam.parameters():
+                param.requires_grad = False
+            for param in self.embedder.parameters():
+                param.requires_grad = False
+            for param in self.classifier.parameters():
+                param.requires_grad = True
+        else:
+            raise RuntimeError('Invalid freeze_mode parameter: ' + freeze_mode)
                 
         self.cbam.apply(initialize_weights)
         self.embedder.apply(initialize_weights)
@@ -128,9 +155,10 @@ class cbam_classifier_152(Complete_Module):
         x = self.avg_pool(x)
         x = self.flatten(x)
         x = self.embedder(x)
-        x = self.classifier(x)
+        if not self.drop_classifier:
+            x = self.classifier(x)
         return x
     
 if __name__ == '__main__':
-    test = cbam_classifier_152()
+    test = cbam_classifier_152(drop_classifier=True)
     test.test_net()

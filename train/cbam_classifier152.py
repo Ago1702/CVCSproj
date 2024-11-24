@@ -25,7 +25,7 @@ wandb.init(
     name = "run 1",
     # track hyperparameters and run metadata
     config={
-    "learning_rate": 0.00001,
+    "learning_rate": 0.0001,
     "architecture": "CNN + CBAM",
     "dataset": "ELSA D3"
     },
@@ -48,12 +48,12 @@ checkpoint_name = 'ch_cbam152_classifier'
 #cuda stuff
 if not torch.cuda.is_available():
     raise RuntimeError('Cuda not available')
-torch.backends.cudnn.enabled = False
+torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
 
 #learning stuff
-model = nn.DataParallel(nets.cbam_classifier_152(freeze_backbone=False)).cuda()
-optimizer = torch.optim.Adam(model.parameters(),lr=0.00001)
+model = nn.DataParallel(nets.cbam_classifier_152(freeze_backbone=False,drop_backbone = True)).cuda()
+optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
 scheduler = ExponentialLR(optimizer=optimizer,gamma=0.95)
 criterion = nn.BCEWithLogitsLoss()  
 

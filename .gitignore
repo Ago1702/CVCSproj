@@ -173,3 +173,4 @@ error.txt
 slurm/output.txt
 output.txt
 error.txt
+wandb/

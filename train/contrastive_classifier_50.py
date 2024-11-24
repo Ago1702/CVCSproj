@@ -16,6 +16,7 @@ from torchvision.transforms import ToPILImage
 
 from models import nets
 import wandb
+from models.nets import initialize_weights
 
 
 wandb.init(
@@ -42,7 +43,7 @@ dataloader = TransformDataLoader(
     dataset_mode=DirectoryRandomDataset.COUP
     )
 
-checkpoint_name = 'ch_vanilla_resnet50_classifier'
+checkpoint_name = 'ch_cbam50_contrastive_classifier'
 
 #cuda stuff
 if not torch.cuda.is_available():
@@ -51,15 +52,21 @@ torch.backends.cudnn.enabled = False
 torch.backends.cudnn.benchmark = True
 
 #learning stuff
-model = nn.DataParallel(nets.vanilla_resnet_classifier_50()).cuda()
-optimizer = torch.optim.Adam(model.parameters(),lr=0.0001)
+model = nn.DataParallel(nets.cbam_classifier_50(freeze_mode='embedder')).cuda()
+optimizer = torch.optim.Adam(model.parameters(),lr=0.0002)
 scheduler = ExponentialLR(optimizer=optimizer,gamma=0.95)
 criterion = nn.BCEWithLogitsLoss()  
 
 #loading previous state
-start_index = load_checkpoint(checkpoint_name=checkpoint_name,optimizer=optimizer,model=model,iteration_index=4000)
+
+if load_checkpoint(checkpoint_name) == 0:
+    start_index = 0
+    print('Loaded starting checkpoint number: '+ str(load_checkpoint('ch_cbam50_contrastive',model=model)))
+else:
+    start_index = load_checkpoint(checkpoint_name=checkpoint_name,optimizer=optimizer,model=model)
 print(f'Loaded checkpoint number: {start_index}',flush=True)
 
+model.module.classifier.apply(initialize_weights)
 running_loss = 0.0
 
 for n, (images, labels) in enumerate(dataloader,start=start_index):
@@ -126,7 +133,7 @@ for n, (images, labels) in enumerate(dataloader,start=start_index):
                 pass
             print('Accuracy is -->' + str(accuracy*100/max_iter) + '%')
                 
-    if(n+1)%20000 == 0:
+    if(n+1)%5000 == 0:
         wandb.finish()
         break
 

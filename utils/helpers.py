@@ -61,19 +61,21 @@ def save_checkpoint(checkpoint_name:str,iteration_index:int,optimizer,model:nn.M
     save_path = os.path.join(path,checkpoint_name)
     torch.save(checkpoint,save_path)
 
-def load_checkpoint(checkpoint_name:str,optimizer=None,model:nn.Module=None,path:str = '/work/cvcs2024/VisionWise/weights',un_parallelize = False):
+def load_checkpoint(checkpoint_name:str,optimizer=None,model:nn.Module=None,iteration_index:int = None,path:str = '/work/cvcs2024/VisionWise/weights',un_parallelize = False):
     """_summary_
 
     Args:
         checkpoint_name (str): name of the checkpoint file
-        optimizer (_type_): _description_
-        model (nn.Module): _description_
+        optimizer (_type_,optional): _description_
+        model (nn.Module, optional): _description_
         path (str, optional): _description_. Defaults to '/work/cvcs2024/VisionWise/weights'.
 
     Returns:
         int: the iteration number
     """
     list_of_all_files = os.listdir(path)
+    if iteration_index != None:
+        checkpoint_name = checkpoint_name + '_' + str(iteration_index)
     list_of_candidate_files = [file for file in list_of_all_files if checkpoint_name in file]
     
     if len(list_of_candidate_files) == 0:
