@@ -8,7 +8,7 @@ import models.nets as nets
 from utils.helpers import load_checkpoint
 
 torch.cuda.manual_seed_all(42)
-torch.backends.cudnn.enabled = True
+torch.backends.cudnn.enabled = False
 while True:
     model = nn.DataParallel(nets.cbam_classifier_152()).cuda()
     #model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_cbam152_classifier_2000.pth',weights_only=False)['model'])
