@@ -10,14 +10,16 @@ from utils.helpers import load_checkpoint
 import signaling
 
 torch.cuda.manual_seed_all(42)
+
 torch.backends.cudnn.enabled = False
 while True:
-    model = nn.DataParallel(nets.ViT_n()).cuda()
-    #model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_cbam152_classifier_2000.pth',weights_only=False)['model'])
-    print('loaded checkpoint:' + str(load_checkpoint('vit_wavelet_classifier',model=model,iteration_index=2000)))
-    
-    #torch.use_deterministic_algorithms(True)
-    #dataset and dataloader for testingf
+    transformer = nn.DataParallel(nets.ViT_3()).cuda()
+    cbam = nn.DataParallel(nets.cbam_classifier_152()).cuda()
+
+    print('ViT checkpoint:' + str(load_checkpoint('vit_classifier',model=transformer,iteration_index = 11000)))
+    print('CBAM checkpoint:' + str(load_checkpoint('ch_cbam152_contrastive',model=cbam,iteration_index=1000)))
+
+    #dataset and dataloader for testing
     test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test')
     test_dataloader = TransformDataLoader(
         cropping_mode=RandomTransform.GLOBAL_CROP,
@@ -26,20 +28,24 @@ while True:
         num_workers=4,
         dataset_mode=DirectoryRandomDataset.COUP,
         probability=0.0,
-        center_crop=True,
-        transform=signaling.wavelets.WaveletTransform()
+        center_crop=True
         )
-    model.eval()
+    transformer.eval()
+    cbam.eval()
+    
+    wavelet =  signaling.wavelets.WaveletTransform()    
     with torch.no_grad():
         accuracy = 0.0
         max_iter = 0
         print('Dataset Iteration')
         iter_n = 0
         for test_images, test_labels in test_dataloader:
-            print(iter_n)
+            print(iter_n,flush=True)
             with torch.no_grad():
-                test_pred = torch.sigmoid(model(test_images))
-                test_pred = torch.round(test_pred)
+                cbam_pred = cbam(test_images)
+                transformer_pred = transformer(test_images)
+                    
+                test_pred = torch.round(torch.sigmoid(0.15*cbam_pred + 0.85*transformer_pred))
                 max_iter += test_pred.shape[0]
                 good_answers = torch.sum(test_pred == test_labels)
                 accuracy+=good_answers.item()
