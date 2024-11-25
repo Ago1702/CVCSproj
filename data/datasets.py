@@ -357,7 +357,13 @@ class DirectorySequentialDataset(Dataset):
     Usage: this class is good, but do not use it directly. Pass it to a torch.utils.data.Dataloader.
     Use case: use it for the test dataset only. Sequentiality is not good for learning.
     '''
-    def __init__(self, dir: Union[str, Path], ext:str = "png"):
+
+    FAKE:int = 1
+    REAL:int = 0
+    BASE:int = 2
+    COUP:int = 3
+
+    def __init__(self, dir: Union[str, Path], ext:str = "png", beaviour = COUP):
         super().__init__()
         if not isinstance(dir, Path):
             dir = Path(dir)
@@ -367,6 +373,13 @@ class DirectorySequentialDataset(Dataset):
         self.ext = ext
         self.tensorizzatore = transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)])
         self.label = {0:"real", 1:"fake"}
+        
+        if(beaviour == self.COUP):
+            self.beaviour = self.__get_coup__
+            pass
+        elif(beaviour == self.BASE):
+            self.beaviour = self.__get_base__
+
         if not (self.dir / ".info").exists():
             self.__write_info__()
         else:
@@ -392,6 +405,9 @@ class DirectorySequentialDataset(Dataset):
         return self.len
     
     def __getitem__(self, index):
+        return self.beaviour(index)
+
+    def __get_coup__(self, index):
         if(index>=4250):
             raise StopIteration
         pr = self.dir / f"image-real-{index:08d}.{self.ext}"
@@ -421,7 +437,34 @@ class DirectorySequentialDataset(Dataset):
 
         return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), self.tensorizzatore(imagef).unsqueeze(0).type(torch.float32)
             
+    def __get_base__(self, index):
+        r_f = index % 2
+        index = index//2
+        if(index>=4250):
+            raise StopIteration
+        r_f_s = 'real' if r_f == 0 else 'fake'
+        pr = self.dir / f"image-{r_f_s}-{index:08d}.{self.ext}"
             
+        #opening the two images
+        imager = Image.open(pr)
+
+        #removing transparency
+        imager = remove_transparency(imager)
+
+        #converting back to RGB 
+        imager = to_RGB(imager)
+
+        '''if is_corrupted_1x1(imager) or is_corrupted_1x1(imagef):
+            index+=1
+            #print('A 1x1 image was found')
+            continue
+        if is_damaging(imager) or is_damaging(imagef):
+            index+=1
+            #print('A damaging image was found')
+            continue'''
+        
+
+        return self.tensorizzatore(imager).unsqueeze(0).type(torch.float32), torch.tensor(r_f, dtype=torch.long)
                 
         
 
