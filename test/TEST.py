@@ -12,9 +12,9 @@ import signaling
 torch.cuda.manual_seed_all(42)
 torch.backends.cudnn.enabled = False
 while True:
-    model = nn.DataParallel(nets.ViT_n()).cuda()
+    model = nn.DataParallel(nets.SuperEnsemble()).cuda()
     #model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_cbam152_classifier_2000.pth',weights_only=False)['model'])
-    print('loaded checkpoint:' + str(load_checkpoint('vit_wavelet_classifier',model=model,iteration_index=2000)))
+    print('loaded checkpoint:' + str(load_checkpoint('ch_crazy_ensemble',model=model,iteration_index=1000)))
     
     #torch.use_deterministic_algorithms(True)
     #dataset and dataloader for testingf
@@ -26,8 +26,7 @@ while True:
         num_workers=4,
         dataset_mode=DirectoryRandomDataset.COUP,
         probability=0.0,
-        center_crop=True,
-        transform=signaling.wavelets.WaveletTransform()
+        center_crop=True
         )
     model.eval()
     with torch.no_grad():

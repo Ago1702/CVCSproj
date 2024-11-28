@@ -2,6 +2,7 @@ import torch
 from torch import nn as nn
 from data.datasets import DirectorySequentialDataset
 from data.datasets import DirectoryRandomDataset
+import signaling.signalnet
 import signaling.wavelets
 from utils.transform import RandomTransform
 from data.dataloader import TransformDataLoader
@@ -15,10 +16,11 @@ torch.backends.cudnn.enabled = False
 while True:
     transformer = nn.DataParallel(nets.ViT_3()).cuda()
     cbam = nn.DataParallel(nets.cbam_classifier_152()).cuda()
-
-    print('ViT checkpoint:' + str(load_checkpoint('vit_classifier',model=transformer,iteration_index = 11000)))
-    print('CBAM checkpoint:' + str(load_checkpoint('ch_cbam152_contrastive',model=cbam,iteration_index=1000)))
-
+    signal_net = nn.DataParallel(signaling.signalnet.SignalNet(do_wavelet_transform=True)).cuda()
+    
+    print('ViT checkpoint:' + str(load_checkpoint('vit_classifier',model=transformer,iteration_index = 10000)))#9000
+    print('CBAM checkpoint:' + str(load_checkpoint('ch_cbam152_contrastive',model=cbam,iteration_index=4000))) #1000
+    print('SignalNet checkpoint:' + str(load_checkpoint('wave50_classifier',model=signal_net)))
     #dataset and dataloader for testing
     test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test')
     test_dataloader = TransformDataLoader(
@@ -44,8 +46,8 @@ while True:
             with torch.no_grad():
                 cbam_pred = cbam(test_images)
                 transformer_pred = transformer(test_images)
-                    
-                test_pred = torch.round(torch.sigmoid(0.15*cbam_pred + 0.85*transformer_pred))
+                signalnet_pred = signal_net(test_images)
+                test_pred = torch.round(torch.sigmoid(0.15 * cbam_pred + 0.85 * transformer_pred + 0.05 * signalnet_pred))
                 max_iter += test_pred.shape[0]
                 good_answers = torch.sum(test_pred == test_labels)
                 accuracy+=good_answers.item()
