@@ -16,7 +16,7 @@ from torch.optim.lr_scheduler import ExponentialLR
 
 from torchvision.transforms import ToPILImage
 
-from models import nets
+#from models import nets
 from signaling.signalnet import SignalNet
 import wandb
 
@@ -24,7 +24,7 @@ import wandb
 SCHED = 100
 OPT = 5
 EVAL = 300
-SAVE = 1200
+SAVE = 900
 SEND = 50
 WAND = True
 UNFREEZE = 600
@@ -34,10 +34,10 @@ SCHED_START = 2100
 if WAND:
     wandb.init(
         project="Wavelet-Classifier",
-        name = "run 1",
+        name = "run 2",
         # track hyperparameters and run metadata
         config={
-        "learning_rate": 0.001,
+        "learning_rate": 0.0005,
         "architecture": "Signalnet",
         "dataset": "ELSA D3"
         },
@@ -52,30 +52,34 @@ dataloader = TransformDataLoader(
     dataset=dataset,
     batch_size=100,
     num_workers=4,
-    dataset_mode=DirectoryRandomDataset.BASE,
-    transform=WaveletTransform()
+    dataset_mode=DirectoryRandomDataset.BASE
     )
 
 checkpoint_name = 'wave50_classifier'
+checkpoint_name_sace = 'wave50trans_classifier'
 
 if not torch.cuda.is_available():
     raise RuntimeError('Cuda not available')
-torch.backends.cudnn.enabled = False
+torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
 
 model = SignalNet(39)
 model.unfreeze()
 model = nn.DataParallel(model).cuda()
 optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
+
+ciao = load_checkpoint(checkpoint_name=checkpoint_name,model=model)
+print(ciao)
+print(f'Loaded checkpoint number: {0}',flush=True)
+
+
+optimizer = torch.optim.Adam(model.parameters(),lr=0.001)
 scheduler = ExponentialLR(optimizer=optimizer,gamma=0.95)
 criterion = nn.BCEWithLogitsLoss()
 
-start_index = load_checkpoint(checkpoint_name,optimizer,model, path="/homes/dagostini/CVCSproj/ueits")
-print(f'Loaded checkpoint number: {start_index}',flush=True)
-
 running_loss = 0.0
 
-for n, (images, labels) in enumerate(dataloader,start=start_index):
+for n, (images, labels) in enumerate(dataloader,start=0):
     model.train()
     #torch.use_deterministic_algorithms(False)
     out = model(images)
@@ -106,7 +110,7 @@ for n, (images, labels) in enumerate(dataloader,start=start_index):
     
     if (n+1) % SAVE == 0: 
         print(f'Saving checkpoint number: {n+1}',flush=True)
-        save_checkpoint(checkpoint_name,(n+1),optimizer,model, path="/homes/dagostini/CVCSproj/ueits")
+        save_checkpoint(checkpoint_name_sace,(n+1),optimizer,model)
     
     if (n+1) % EVAL == 0:
         #torch.use_deterministic_algorithms(True)
@@ -118,8 +122,7 @@ for n, (images, labels) in enumerate(dataloader,start=start_index):
             batch_size=100,
             num_workers=4,
             dataset_mode=DirectoryRandomDataset.BASE,
-            probability=0.0,
-            transform=WaveletTransform()
+            probability=0.0
             )
         
         model.eval()

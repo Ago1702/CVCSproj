@@ -63,12 +63,22 @@ if __name__ == "__main__":
         img.append(img_t[:, :3, :200, :200])
     img = torch.cat(img)
     print(img.shape)
-    t = WaveletTransform("db2")
-    res = t.forward(img)
+    t = WaveletTransform()
+    resb = t.forward(img)
+    ress = []
+    for i in range(img.shape[0]):
+        ciao = t.forward(img[i])
+        #print(type(ciao))
+        ress.append(ciao)
+    ress = torch.cat(ress, 0)
+    print(ress.shape)
+    print(np.average((resb - ress).numpy()), np.std((resb - ress).numpy()))
+    #print(res)
+
     #a, (b, c, d) = pywt.dwt2(img[0, 0].numpy(), 'haar')
     #print(a)
     #print(res[0, 0])
     #print(b)
     #print(res[0, 1])
     
-    print(res.shape)
+    #print(res.shape)
