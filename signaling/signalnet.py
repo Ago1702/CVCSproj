@@ -27,6 +27,7 @@ class SignalNet(nn.Module):
         if self.do_wavelet_transform:
             device = x.device
             x = self.transform(x).to(device)
+            torch.clamp(x,min=0.0,max=1.0)
         x = self.input(x)
         x = self.resnet(x)
         x = self.output(x)
