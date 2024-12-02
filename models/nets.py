@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import joblib
 from torchvision import transforms
+import signaling.signalnet
 
 class Complete_Module(nn.Module):
     def __init__(self,name:str = 'Unimplemented Complete Module'):
@@ -246,7 +247,36 @@ class VITContrastiveHF(nn.Module):
         predictions = self.classifier.predict(features)
         return torch.from_numpy(predictions)
 
+class SuperEnsemble(Complete_Module):
+    def __init__(self,name='SuperEnsemble',load_checkpoints = False,freeze_models = True):
+        super(SuperEnsemble,self).__init__(name=name)
+        self.transformer = ViT_3()
+        self.cbam = cbam_classifier_152()
+        self.signal_net = signaling.signalnet.SignalNet(do_wavelet_transform=True)
+        
+        if load_checkpoints:
+            ch_1 = load_checkpoint('vit_classifier',model=self.transformer,iteration_index = 10000,un_parallelize=True)
+            ch_2 = load_checkpoint('ch_cbam152_contrastive',model=self.cbam,iteration_index=4000,un_parallelize=True)
+            ch_3 = load_checkpoint('wave50_classifier',model=self.signal_net,un_parallelize=True)
+            print(f'loader default checkpoints: {ch_1}, {ch_2}, {ch_3}')
+            
+        if freeze_models:
+            for param in self.transformer.parameters():
+                param.requires_grad = False
+            for param in self.cbam.parameters():
+                param.requires_grad = False
+            for param in self.signal_net.parameters():
+                param.requires_grad = False
+        self.final = nn.Sequential(nn.Linear(in_features=3,out_features=3),nn.ReLU(),nn.Linear(in_features=3,out_features=1))
+        self.final.apply(initialize_weights)
+    def forward(self,x:torch.Tensor):
+        x1 = self.transformer(x)
+        x2 = self.cbam(x)
+        x3 = self.signal_net(x)
+        out = torch.cat([x1,x2,x3],dim=1)
+        return self.final(out)
+
     
 if __name__ == '__main__':
-    test = ViT_n()
-    test.test_net(size=(10,39,224,224))
+    test = SuperEnsemble(load_checkpoints=True)
+    test.test_net(size=(10,3,224,224))

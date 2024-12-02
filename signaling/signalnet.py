@@ -9,9 +9,9 @@ from torchvision import models
 from utils.modules import initialize_weights
 
 class SignalNet(nn.Module):
-    def __init__(self, in_channels):
+    def __init__(self, in_channels = 39,do_wavelet_transform = False):
         super().__init__()
-        self.resnet = models.resnet50(models.ResNet50_Weights.IMAGENET1K_V1)
+        self.resnet = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
         self.input = nn.Sequential(nn.Conv2d(in_channels=in_channels, out_channels=3, kernel_size=3,
                                stride=1, padding=1))
         self.output = nn.Sequential(
@@ -19,9 +19,15 @@ class SignalNet(nn.Module):
             nn.ReLU(),
             nn.Linear(in_features=256, out_features=1)
         )
+        self.do_wavelet_transform = do_wavelet_transform
+        self.transform = WaveletTransform()
         pass
 
-    def forward(self, x):
+    def forward(self, x:torch.Tensor):
+        if self.do_wavelet_transform:
+            device = x.device
+            x = self.transform(x).to(device)
+            torch.clamp(x,min=0.0,max=1.0)
         x = self.input(x)
         x = self.resnet(x)
         x = self.output(x)
