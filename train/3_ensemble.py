@@ -21,7 +21,7 @@ import wandb
 wandb.init(
     # set the wandb project where this run will be logged
     project="Crazy Ensemble",
-    name = "run 2",
+    name = "run 3",
     # track hyperparameters and run metadata
     config={
     "learning_rate": 0.0001,
@@ -42,7 +42,7 @@ dataloader = TransformDataLoader(
     dataset_mode=DirectoryRandomDataset.COUP
     )
 
-checkpoint_name = 'ch_crazy_ensemble'
+checkpoint_name = 'ch_crazy_ensemble_v2'
 
 #cuda stuff
 if not torch.cuda.is_available():

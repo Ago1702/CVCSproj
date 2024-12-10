@@ -257,7 +257,7 @@ class SuperEnsemble(Complete_Module):
         if load_checkpoints:
             ch_1 = load_checkpoint('vit_classifier',model=self.transformer,iteration_index = 10000,un_parallelize=True)
             ch_2 = load_checkpoint('ch_cbam152_contrastive',model=self.cbam,iteration_index=4000,un_parallelize=True)
-            ch_3 = load_checkpoint('wave50_classifier',model=self.signal_net,un_parallelize=True)
+            ch_3 = load_checkpoint('wave50trans_classifier',model=self.signal_net,un_parallelize=True)
             print(f'loader default checkpoints: {ch_1}, {ch_2}, {ch_3}')
             
         if freeze_models:
