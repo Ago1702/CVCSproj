@@ -1,0 +1,26 @@
+mettere grafici
+specificare quando il training è stato fermato
+fare vedere i vari passaggi intermedi con grafici
+
+Paper: usare i good papers come reference
+1.  Introduction. Introdurre il task, dire cosa portiamo di nuovo. Qualche riga su deepfake detection, a cosa serve, e introdurre cosa faremo.
+2.  Related.
+    2.1     Analisi sui metodi in letteratura per deepfake detection
+    2.2     Loss, CBAM, sempre da letteratura (Facenet, infonce...)
+3. Dataset
+    3.1  Dataset disponibili, quali altri ci sono(punto 3?? Dataset)
+    3.2 Trasformazioni applicate, pulizia del dataset etc.
+4. Esperimenti e metodo (approach?? titolo sensato)
+    4.1 Varie Loss (couple behaviour)
+    4.2 Performance
+    4.3 Plots
+5. Retrieval (4.x??)
+    5.1 Comparisons (pretrain o nostra)
+
+6.  Conclusione (sunto)
+    6.1 Il vit funziona meglio, l'ensemble funziona bene
+7. Basta (reference, vengono principalmente dal punto 2)
+
+
+Provare a fare resnet152 vs vit in fine tuning (ultimo layer)
+Controllare performance in base a freezing diversi?
