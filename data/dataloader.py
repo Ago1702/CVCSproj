@@ -50,7 +50,7 @@ class TransformDataLoader(DataLoader):
         '''
         #error handling
         if not torch.cuda.is_available():
-            raise RuntimeError('CUDA not available (????????)')
+            print('cuda not available (cringe)')
         if cropping_mode != RandomTransform.GLOBAL_CROP and cropping_mode != RandomTransform.LOCAL_CROP:
             raise RuntimeError(f'TransformDataLoader was called with an invalid cropping_mode: {cropping_mode} .Look at the TransformDataLoader documentation.')
         if dataset_mode not in [DirectoryRandomDataset.BASE,DirectoryRandomDataset.COUP]:
@@ -66,6 +66,7 @@ class TransformDataLoader(DataLoader):
             dataset.change_mode(dataset_mode)
 
         super().__init__(dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=self.custom_collate)
+        self.iterator = iter(super().__iter__())
         if transform is None:
             self.transform = RandomTransform(cropping_mode=cropping_mode,p=probability,pacman=pacman,center_crop=center_crop)
         else:
@@ -132,11 +133,14 @@ class TransformDataLoader(DataLoader):
     
     def __iter__(self):
         for batch in super().__iter__():
-            yield torch.clamp(batch[0].cuda(),min = 0.0,max = 1.0) , batch[1].unsqueeze(1).cuda() 
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            yield torch.clamp(batch[0].to(device),min = 0.0,max = 1.0) , batch[1].unsqueeze(1).to(device)
             #perché unqueeze? le reti neurali vogliono le etichette in due dimensioni, nel formato: (N_labels,1)
             #clamp per evitare che ci siano delle cifre decimali sul max 
         
-
+    def __next__(self):
+        # Fetch the next batch of data
+        return next(self.iterator)
 
 if __name__ == "__main__":
 

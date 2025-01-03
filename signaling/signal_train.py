@@ -115,7 +115,7 @@ for n, (images, labels) in enumerate(dataloader,start=0):
     if (n+1) % EVAL == 0:
         #torch.use_deterministic_algorithms(True)
         #dataset and dataloader for testing
-        test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test', beaviour=DirectoryRandomDataset.BASE)
+        test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test', behaviour=DirectoryRandomDataset.BASE)
         test_dataloader = TransformDataLoader(
             cropping_mode=RandomTransform.GLOBAL_CROP,
             dataset=test_dataset,

@@ -175,3 +175,6 @@ error.txt
 wandb/
 slurm/wandb/
 slurm/outputs
+demo/test
+demo/weights
+demo/zip_dataset
