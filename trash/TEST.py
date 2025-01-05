@@ -15,23 +15,6 @@ import signaling.signalnet as signalnet
 import gdown
 import os
 import zipfile
-import shutil
-import tqdm
-
-def clean_dir(is_interrupt,args):
-    sys.stdout.flush()
-    print('Keyboard interrupt detected. Cleaning...')
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    os.chdir(script_dir)
-    list_of_matches = ['part','pth','zip']
-    deletable_filenames = [filename for filename in os.listdir() if any(match in filename for match in list_of_matches)]
-    if len(deletable_filenames) > 0:
-        for file in deletable_filenames:
-            os.remove(file)
-    if is_interrupt or (not args.keep_test_dir):
-        if os.path.exists('test'):
-            shutil.rmtree('test')
-    
 if __name__ == '__main__':
     try:
         print('Hi! You are now testing our model! Relax, it will take a while...')
@@ -50,11 +33,7 @@ if __name__ == '__main__':
             help=f"Choose a model from: {', '.join(model_choices)}",
             required=True,
         )
-        parser.add_argument(
-            '--keep-test-dir',
-            action='store_true',
-            help="Keep the test directory after the script finishes."
-)
+
         args = parser.parse_args()
         if not args.model in model_choices:
             print(f'Invalid model argument: {args.model}')
@@ -84,7 +63,7 @@ if __name__ == '__main__':
         torch.cuda.manual_seed_all(42)
         torch.backends.cudnn.enabled = False
 
-        model = nn.DataParallel(models_models_dict[args.model]).cuda()
+        model = nn.DataParallel(models_models_dict[args.model])
         
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
@@ -106,10 +85,10 @@ if __name__ == '__main__':
         print('Extracting the dataset...')
         with zipfile.ZipFile('test.zip') as zip_ref:
             zip_ref.extractall()
-        os.remove('test.zip')
+        
         #torch.use_deterministic_algorithms(True)
         #dataset and dataloader for testing
-        test_dataset = DirectorySequentialDataset(dir='test')
+        test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test')
         test_dataloader = TransformDataLoader(
             cropping_mode=RandomTransform.GLOBAL_CROP,
             dataset=test_dataset,
@@ -126,23 +105,27 @@ if __name__ == '__main__':
             max_iter = 0
             print('Dataset Iteration')
             iter_n = 0
-            for test_images, test_labels in tqdm(test_dataloader,desc='Testing progress...'):
+            for test_images, test_labels in test_dataloader:
+                print(iter_n)
                 
                 test_pred = torch.sigmoid(model(test_images))
                 test_pred = torch.round(test_pred)
                 max_iter += test_pred.shape[0]
                 good_answers = torch.sum(test_pred == test_labels)
-                good_real_answers = torch.sum(test_pred == 0 & test_labels == 0)
-                good_fake_answers = torch.sum(test_pred == 1 & test_labels == 1)
-                
+                accuracy+=good_answers.item()
                 iter_n +=100
             
-            print('Accuracy is -->' + str(good_answers.item()*100/max_iter) + '%')
-            print('Real accuracy is -->' + str(good_real_answers*200/max_iter) + '%')
-            print('Fake accuracy is -->' + str(good_fake_answers*200/max_iter) + '%')
-            
-        clean_dir(is_interrupt=False,args=args)
+            print('Accuracy is -->' + str(accuracy*100/max_iter) + '%')
     except KeyboardInterrupt:
-        clean_dir(is_interrupt=True,args=args)
-        
+        sys.stdout.flush()
+        print('Keyboard interrupt detected. Cleaning...')
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        os.chdir(script_dir)
+        list_of_matches = ['part','pth','zip']
+        deletable_filenames = [filename for filename in os.listdir() if any(match in filename for match in list_of_matches)]
+        if len(deletable_filenames) > 0:
+            for file in deletable_filenames:
+                os.remove(file)
+        if os.path.exists('test'):
+            os.removedirs('test')
         

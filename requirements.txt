@@ -13,6 +13,7 @@ torch~=2.5.1
 torchvision~=0.20.1
 transformers==4.47.1
 wandb==0.19.1
+tqdm==4.67.1
 
 gdown~=5.2.0
 scikit-learn~=1.6.0
