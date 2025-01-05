@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import PhotoImage
 from PIL import Image, ImageTk
 import torch
-from models.nets import vanilla_resnet_classifier_50
+from models.nets import SuperEnsemble
 from utils.helpers import state_dict_adapter
 def tensor_to_image(tensor: torch.Tensor):
     # Clamp values to be in the range [0, 1]
@@ -177,7 +177,9 @@ def create_gui():
 
 if __name__ == '__main__':
     dataset_link = 'https://drive.google.com/uc?id=19nrUNb4U3PCgCDTUGFYNPlK1ZHZwI61S'
-    weights_link = 'https://drive.google.com/uc?id=150nfmRGFLTWo8uQ8W1t6cg73sZotOpXK'
+
+    #weights_link = 'https://drive.google.com/uc?id=150nfmRGFLTWo8uQ8W1t6cg73sZotOpXK' #resnet_50
+    weights_link = 'https://drive.google.com/uc?id=1dzsHe-BNYUIWzCzJN8Ktskmakh318TfL'
 
     zip_dataset_folder = 'zip_dataset'
     test_dataset_folder = 'test_dataset'
@@ -229,7 +231,7 @@ if __name__ == '__main__':
     )
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model = vanilla_resnet_classifier_50()
+    model = SuperEnsemble(load_checkpoints=False)
     model.eval()
     model.load_state_dict(state_dict_adapter(torch.load(os.path.join(weights_folder,weights_name),weights_only=False,map_location=device)['model'],'module.',''))
     model = model.to(device)

@@ -15,7 +15,7 @@ torch.backends.cudnn.enabled = False
 while True:
     model = nn.DataParallel(nets.SuperEnsemble()).cuda()
     #model.load_state_dict(torch.load('/work/cvcs2024/VisionWise/weights/ch_cbam152_classifier_2000.pth',weights_only=False)['model'])
-    print('loaded checkpoint:' + str(load_checkpoint('ch_crazy_ensemble_v2_3000',model=model)))
+    print('loaded checkpoint:' + str(load_checkpoint('ch_crazy_ensemble_v2_2000',model=model)))
     
     #torch.use_deterministic_algorithms(True)
     #dataset and dataloader for testingf

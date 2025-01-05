@@ -118,12 +118,13 @@ class cbam_classifier_50(Complete_Module):
         return x
     
 class cbam_classifier_152(Complete_Module):
-    def __init__(self,name = 'Resnet152-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False):
+    def __init__(self,name = 'Resnet152-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False,load_checkpoints = True):
         super(cbam_classifier_152,self).__init__(name)
         
         self.drop_classifier = drop_classifier
         vanilla = vanilla_resnet_classifier_152()
-        load_checkpoint('ch_vanilla_resnet152_classifier',model=vanilla,un_parallelize=True)
+        if load_checkpoints:
+            load_checkpoint('ch_vanilla_resnet152_classifier',model=vanilla,un_parallelize=True)
         children = list(vanilla.children())
         self.resnet = nn.Sequential(*list(children[0].children())[:-1])
         self.cbam = nn.Sequential(
@@ -251,7 +252,7 @@ class SuperEnsemble(Complete_Module):
     def __init__(self,name='SuperEnsemble',load_checkpoints = False,freeze_models = True):
         super(SuperEnsemble,self).__init__(name=name)
         self.transformer = ViT_3()
-        self.cbam = cbam_classifier_152()
+        self.cbam = cbam_classifier_152(load_checkpoints=False)
         self.signal_net = signaling.signalnet.SignalNet(do_wavelet_transform=True)
         
         if load_checkpoints:
