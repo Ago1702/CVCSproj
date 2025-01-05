@@ -69,12 +69,13 @@ class vanilla_resnet_classifier_50(Complete_Module):
         return x
     
 class cbam_classifier_50(Complete_Module):
-    def __init__(self,name = 'Resnet50-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False):
+    def __init__(self,name = 'Resnet50-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False,load_checkpoints = False):
         super(cbam_classifier_50,self).__init__(name)
         self.drop_classifier = drop_classifier
         
         vanilla = vanilla_resnet_classifier_50()
-        load_checkpoint('ch_vanilla_resnet50_classifier',model=vanilla,un_parallelize=True)
+        if load_checkpoints:
+            load_checkpoint('ch_vanilla_resnet50_classifier',model=vanilla,un_parallelize=True)
         children = list(vanilla.children())
         self.resnet = nn.Sequential(*list(children[0].children())[:-1])
         self.cbam = nn.Sequential(
@@ -118,7 +119,7 @@ class cbam_classifier_50(Complete_Module):
         return x
     
 class cbam_classifier_152(Complete_Module):
-    def __init__(self,name = 'Resnet152-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False,load_checkpoints = True):
+    def __init__(self,name = 'Resnet152-CBAM Classifier',freeze_mode = 'resnet',drop_classifier = False,load_checkpoints = False):
         super(cbam_classifier_152,self).__init__(name)
         
         self.drop_classifier = drop_classifier

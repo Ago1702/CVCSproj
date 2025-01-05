@@ -16,7 +16,7 @@ import gdown
 import os
 import zipfile
 import shutil
-import tqdm
+from tqdm import tqdm
 
 def clean_dir(is_interrupt,args):
     sys.stdout.flush()
@@ -35,6 +35,8 @@ def clean_dir(is_interrupt,args):
 if __name__ == '__main__':
     try:
         print('Hi! You are now testing our model! Relax, it will take a while...')
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         model_choices = [
             'resnet50' , 'resnet50cbamcontrastive' , 
             'resnet152', 'resnet152cbam',
@@ -65,7 +67,7 @@ if __name__ == '__main__':
             'resnet50':                 'https://drive.google.com/uc?id=150nfmRGFLTWo8uQ8W1t6cg73sZotOpXK',
             'resnet50cbamcontrastive':  'https://drive.google.com/uc?id=1JkFiuDOkt1Wq3nZAk7dr1XyvCIKJetkG',
             'resnet152':                'https://drive.google.com/uc?id=1HL--zu1VRlUEcc0bnuBiglXMDASSe2VY',
-            'resnet152cbam':            'https://drive.google.com/uc?id=1pfnvDuPJ_oAUH9TawN-P8olULDaprEb9',
+            'resnet152cbamcontrastive':            'https://drive.google.com/uc?id=1pfnvDuPJ_oAUH9TawN-P8olULDaprEb9',
             'vit':                      'https://drive.google.com/uc?id=19c2-zr7I9aAhAce5W0Tfd9MTpE9aS6_c',
             'wavenet':                  'https://drive.google.com/uc?id=1MuSdfqPd-yOR_ykk1ure7NUH3zTzGHLW', 
             'ensemble':                 'https://drive.google.com/uc?id=1dzsHe-BNYUIWzCzJN8Ktskmakh318TfL'
@@ -84,7 +86,7 @@ if __name__ == '__main__':
         torch.cuda.manual_seed_all(42)
         torch.backends.cudnn.enabled = False
 
-        model = nn.DataParallel(models_models_dict[args.model]).cuda()
+        model = nn.DataParallel(models_models_dict[args.model]).to(device)
         
         script_dir = os.path.dirname(os.path.abspath(__file__))
         os.chdir(script_dir)
@@ -95,7 +97,7 @@ if __name__ == '__main__':
             )
 
         weights_filename = [filename for filename in os.listdir() if 'pth' in filename][0]
-        model.load_state_dict(torch.load(weights_filename,weights_only=False)['model'])
+        model.load_state_dict(torch.load(weights_filename,weights_only=False,map_location=torch.device('cpu'))['model'])
         os.remove(weights_filename)
         
         print('Weights file successfully loaded!')
