@@ -102,17 +102,17 @@ def show_solution():
 
 # Function to update leaderboard scores
 def update_leaderboard():
-    global you_score, model_score
+    global you_score, model_score, total_label
 
     # Update leaderboard labels
     you_label.config(text=f"YOU: {you_score}")
     model_label.config(text=f"MODEL: {model_score}")
-
+    total_label.config(text=f"TOTAL: {total_score}")
 
 # Function to create the basic GUI
 def create_gui():
     global root, image_space, test_dataloader, solution_label, model_solution_label
-    global you_label, model_label, you_score, model_score, action_var
+    global you_label, model_label, you_score, model_score, action_var, total_score
 
     # Create the main window
     root = tk.Tk()
@@ -159,6 +159,7 @@ def create_gui():
     # Initialize leaderboard scores
     you_score = 0
     model_score = 0
+    total_score = 0
 
     # Create leaderboard table
     leaderboard_label = tk.Label(leaderboard_frame, text="LEADERBOARD", font=("Helvetica", 14))
@@ -170,6 +171,8 @@ def create_gui():
     model_label = tk.Label(leaderboard_frame, text=f"MODEL: {model_score}", font=("Helvetica", 12))
     model_label.grid(row=2, column=0, padx=10, pady=5)
 
+    total_label = tk.Label(leaderboard_frame, text=f"TOTAL: {total_score}", font=("Helvetica", 12))
+    total_label.grid(row=3, column=0, padx=10, pady=5)
     # Run the GUI
     update_image()
     root.mainloop()
