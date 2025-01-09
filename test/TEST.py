@@ -17,10 +17,12 @@ import os
 import zipfile
 import shutil
 from tqdm import tqdm
+import random
+import numpy as np
 
-def clean_dir(is_interrupt,args):
+def clean_dir(is_interrupt,args,message):
     sys.stdout.flush()
-    print('Keyboard interrupt detected. Cleaning...')
+    print(message)
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
     list_of_matches = ['part','pth','zip']
@@ -33,11 +35,14 @@ def clean_dir(is_interrupt,args):
             shutil.rmtree('test')
     
 if __name__ == '__main__':
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if not torch.cuda.is_available():
+        print('cuda not available: cringe!')
     try:
         model_choices = [
             'resnet50' , 'resnet50cbamcontrastive' , 
             'resnet152', 'resnet152cbam',
-            'vit','wavenet','ensemble'
+            'vit','wavenet','ensemble','code'
         ]
         parser = argparse.ArgumentParser(
             description="test script for our models"
@@ -83,28 +88,39 @@ if __name__ == '__main__':
             'resnet152cbam':            nets.cbam_classifier_152(),
             'vit':                      nets.ViT_3(),
             'wavenet':                  signalnet.SignalNet(), 
-            'ensemble':                 nets.SuperEnsemble()
+            'ensemble':                 nets.SuperEnsemble(),
+            'code' :                    nets.VITContrastiveHF(classificator_type='linear')
         }
         
-        torch.cuda.manual_seed_all(42)
+        # Set seed for CPU
+        torch.manual_seed(42)
+
+        # Set seed for CUDA
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed(42)
+            torch.cuda.manual_seed_all(42)  # If multiple GPUs are being used
+
+        # Set seed for other libraries (optional, but useful for reproducibility)
+        random.seed(42)
+        np.random.seed(42)
         torch.backends.cudnn.enabled = False
 
-        model = nn.DataParallel(models_models_dict[args.model]).cuda()
-        
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        os.chdir(script_dir)
-        
-        print('Downloading weights file...')
-        gdown.download(
-                url=models_weights_dict[args.model]
-            )
+        model = nn.DataParallel(models_models_dict[args.model].to(device))
+        if args.model != 'code':
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            os.chdir(script_dir)
+            
+            print('Downloading weights file...')
+            gdown.download(
+                    url=models_weights_dict[args.model]
+                )
 
-        weights_filename = [filename for filename in os.listdir() if 'pth' in filename][0]
-        model.load_state_dict(torch.load(weights_filename,weights_only=False)['model'])
-        os.remove(weights_filename)
-        print('Weights file successfully loaded!')
-        
-        test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test')
+            weights_filename = [filename for filename in os.listdir() if 'pth' in filename][0]
+            model.load_state_dict(torch.load(weights_filename,weights_only=False)['model'])
+            os.remove(weights_filename)
+            print('Weights file successfully loaded!')
+        is_code = True if args.model == 'code' else False
+        test_dataset = DirectorySequentialDataset(dir='/work/cvcs2024/VisionWise/test',is_code=is_code)
         if args.download_test_set:
             
             print('Downloading the dataset')
@@ -115,7 +131,7 @@ if __name__ == '__main__':
             with zipfile.ZipFile('test.zip') as zip_ref:
                 zip_ref.extractall()
             os.remove('test.zip')
-            test_dataset = DirectorySequentialDataset(dir='test')
+            test_dataset = DirectorySequentialDataset(dir='test',is_code=is_code)
         #torch.use_deterministic_algorithms(True)
         #dataset and dataloader for testing
 
@@ -137,7 +153,9 @@ if __name__ == '__main__':
             max_iter = 0
             print('Dataset Iteration')
             iter_n = 0
-            for test_images, test_labels in tqdm(test_dataloader,desc='Testing progress...'):
+            for test_images, test_labels in tqdm(test_dataloader,desc='Testing progress...',):
+                test_images = test_images.to(device)
+                test_labels = test_labels.to(device)
                 
                 test_pred = torch.sigmoid(model(test_images))
                 test_pred = torch.round(test_pred)
@@ -153,6 +171,6 @@ if __name__ == '__main__':
             print('Real accuracy is -->' + str(good_real_answers.item()*200/max_iter) + '%')
             print('Fake accuracy is -->' + str(good_fake_answers.item()*200/max_iter) + '%')
             
-        clean_dir(is_interrupt=False,args=args)
+        clean_dir(is_interrupt=False,args=args,message='End of testing. Cleaning...')
     except KeyboardInterrupt:
-        clean_dir(is_interrupt=True,args=args)
+        clean_dir(is_interrupt=True,args=args,message='Keyboard interrupt detected. Cleaning...')
