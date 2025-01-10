@@ -32,12 +32,13 @@ def tensor_to_image(tensor: torch.Tensor):
 
 # Function to update the image after the NEXT button is pressed
 def update_image():
-    global test_dataloader, label, model_tensor,action_var
+    global test_dataloader, label, model_tensor,action_var,solution_button
 
     # Hide solution labels when "NEXT" is pressed
     solution_label.grid_forget()
     model_solution_label.grid_forget()
-
+    next_button.config(state='disabled')
+    solution_button.config(state='normal')
     try:
         image_tensor, labels = next(test_dataloader)  # Get one image from the DataLoader
 
@@ -65,9 +66,10 @@ def update_image():
 
 
 def show_solution():
-    global label, model, you_score, model_score, action_var
+    global label, model, you_score, model_score, action_var, total_score,solution_button
     # Randomly choose between "IT WAS REAL!" or "IT WAS FAKE!"
     solution = "IT WAS REAL" if label == 0 else "IT WAS FAKE"
+    solution_button.config(state='disabled')
     print(label)
     # Set the color based on the solution text
     if solution == "IT WAS REAL!":
@@ -93,11 +95,13 @@ def show_solution():
             model_score+=1
     if action_var.get() == label:
         you_score+=1
+    total_score+=1
     update_leaderboard()
     # Display the "MODEL SAID" label
     model_solution_label.config(text=model_solution)
     model_solution_label.grid(row=3, column=0, padx=10, pady=10)
     action_var.set(2)
+    next_button.config(state='normal')
 
 
 # Function to update leaderboard scores
@@ -111,8 +115,9 @@ def update_leaderboard():
 
 # Function to create the basic GUI
 def create_gui():
-    global root, image_space, test_dataloader, solution_label, model_solution_label
+    global root, image_space, test_dataloader, solution_label, model_solution_label, total_label
     global you_label, model_label, you_score, model_score, action_var, total_score
+    global next_button, solution_button
 
     # Create the main window
     root = tk.Tk()
@@ -137,10 +142,10 @@ def create_gui():
     fake_button = tk.Radiobutton(frame, text="FAKE", variable=action_var, value=1)
 
     # Create the NEXT button
-    next_button = tk.Button(frame, text="NEXT", width=15, command=update_image)
+    next_button = tk.Button(frame, text="NEXT", width=15, command=update_image,state='normal')
 
     # Create the SOLUTION button
-    solution_button = tk.Button(frame, text="SOLUTION", width=15, command=show_solution)
+    solution_button = tk.Button(frame, text="SOLUTION", width=15, command=show_solution,state='disabled')
 
     # Arrange buttons in a grid
     real_button.grid(row=1, column=0, padx=10, pady=10)
@@ -175,6 +180,8 @@ def create_gui():
     total_label.grid(row=3, column=0, padx=10, pady=5)
     # Run the GUI
     update_image()
+    root.after(50,lambda: next_button.config(state='normal'))
+    root.after(60,lambda:solution_button.config(state='disabled'))
     root.mainloop()
 
 
