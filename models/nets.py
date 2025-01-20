@@ -242,12 +242,14 @@ class VITContrastiveHF(nn.Module):
             raise ValueError("Selected an invalid classifier")
 
     def forward(self, x, return_feature=False):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
         features = self.model(x)
         if return_feature:
             return features
         features = features.last_hidden_state[:, 0, :].cpu().detach().numpy()
         predictions = self.classifier.predict(features)
-        return torch.from_numpy(predictions)
+        return torch.from_numpy(predictions).to(device).unsqueeze(1)
 
 class SuperEnsemble(Complete_Module):
     def __init__(self,name='SuperEnsemble',load_checkpoints = False,freeze_models = True):

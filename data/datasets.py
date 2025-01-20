@@ -363,7 +363,7 @@ class DirectorySequentialDataset(Dataset):
     BASE:int = 2
     COUP:int = 3
 
-    def __init__(self, dir: Union[str, Path], ext:str = "png", behaviour = COUP):
+    def __init__(self, dir: Union[str, Path], ext:str = "png", behaviour = COUP,is_code = False):
         super().__init__()
         if not isinstance(dir, Path):
             dir = Path(dir)
@@ -371,7 +371,16 @@ class DirectorySequentialDataset(Dataset):
             raise ValueError("The path has to be a directory")
         self.dir = dir
         self.ext = ext
-        self.tensorizzatore = transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)])
+        if is_code:
+            self.tensorizzatore = transforms.Compose(
+            [
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            ]
+            )
+        else:
+            self.tensorizzatore = transforms.Compose([transforms.ToImage(), transforms.ToDtype(torch.float32, scale=True)])
         self.label = {0:"real", 1:"fake"}
         
         if(behaviour == self.COUP):
