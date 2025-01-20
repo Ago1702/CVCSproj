@@ -178,3 +178,5 @@ slurm/outputs
 demo/test
 demo/weights
 demo/zip_dataset
+build
+dist

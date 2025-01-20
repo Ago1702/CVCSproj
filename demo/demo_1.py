@@ -14,6 +14,23 @@ from PIL import Image, ImageTk
 import torch
 from models.nets import SuperEnsemble
 from utils.helpers import state_dict_adapter
+from tkinter import Label
+
+# Function to create the loading GUI
+def show_loading_screen():
+    global loading_root
+    loading_root = tk.Tk()
+    loading_root.title("Loading")
+    loading_root.geometry("400x200")
+    loading_label = Label(loading_root, text="Loading... Please wait.", font=("Helvetica", 16))
+    loading_label.pack(expand=True)
+    loading_root.update()
+
+# Function to hide the loading GUI
+def hide_loading_screen():
+    global loading_root
+    loading_root.destroy()
+
 def tensor_to_image(tensor: torch.Tensor):
     # Clamp values to be in the range [0, 1]
     tensor = tensor.clamp(0.0, 1.0)
@@ -124,7 +141,7 @@ def create_gui():
     root.title("Image Labeling GUI")
 
     # Set window size (optional)
-    root.geometry("1200x700")
+    root.geometry("1200x900")
 
     # Create the frame for buttons and image
     frame = tk.Frame(root)
@@ -186,6 +203,7 @@ def create_gui():
 
 
 if __name__ == '__main__':
+    show_loading_screen()
     dataset_link = 'https://drive.google.com/uc?id=19nrUNb4U3PCgCDTUGFYNPlK1ZHZwI61S'
 
     #weights_link = 'https://drive.google.com/uc?id=150nfmRGFLTWo8uQ8W1t6cg73sZotOpXK' #resnet_50
@@ -245,5 +263,6 @@ if __name__ == '__main__':
     model.eval()
     model.load_state_dict(state_dict_adapter(torch.load(os.path.join(weights_folder,weights_name),weights_only=False,map_location=device)['model'],'module.',''))
     model = model.to(device)
+    hide_loading_screen()
     create_gui()
 
